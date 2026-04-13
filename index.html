@@ -1,0 +1,957 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AU-SET AI Engineering Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], },
+                    colors: {
+                        aured: '#D92D20',      // Sleek modern red
+                        auredlight: '#F04438',
+                        augold: '#DC6803',     // Modern deep amber/gold
+                        bgapp: '#F9FAFB',      // Off-white standard app bg
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px rgba(0, 0, 0, 0.04)',
+                        'float': '0 10px 30px rgba(217, 45, 32, 0.15)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 0px; height: 0px; background: transparent; }
+        body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-up { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom UI Radio toggle */
+        .option-radio:checked + div { border-color: #D92D20; background-color: #D92D20; }
+        .option-radio:checked + div svg { opacity: 1; transform: scale(1); }
+    </style>
+</head>
+<body class="bg-gray-200 text-gray-900 font-sans h-[100dvh] flex flex-col items-center justify-center selection:bg-red-200">
+
+    <!-- APP CONTAINER -->
+    <div id="app" class="w-full h-full max-w-md w-full bg-bgapp shadow-2xl relative flex flex-col overflow-hidden sm:h-[90dvh] sm:rounded-[2.5rem] sm:border-[8px] sm:border-gray-900 relative">
+        
+        <!-- ========================================== -->
+        <!-- SCREEN 1: DASHBOARD (Stats & History)      -->
+        <!-- ========================================== -->
+        <div id="screen-dashboard" class="absolute inset-0 z-10 bg-bgapp flex flex-col hidden overflow-y-auto pb-10">
+            <header class="bg-white px-6 py-6 rounded-b-3xl shadow-sm mb-6 shrink-0 relative">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-aured font-black text-2xl">AU</div>
+                    <div>
+                        <h1 class="font-bold text-gray-900 text-xl leading-tight">AU-SET</h1>
+                        <p class="text-xs text-gray-500 font-semibold uppercase tracking-widest">AI Test Platform</p>
+                    </div>
+                </div>
+                <button onclick="switchScreen('screen-setup')" class="w-full py-4 bg-aured text-white font-bold rounded-2xl shadow-float active:bg-auredlight transition-colors flex justify-center items-center gap-2 text-lg">
+                    <i class="fas fa-play"></i> Start New Test
+                </button>
+            </header>
+
+            <div class="px-6 flex-1">
+                <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Your Statistics</h2>
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100">
+                        <div class="text-gray-400 text-sm font-medium mb-1">Total Tests</div>
+                        <div class="text-3xl font-black text-gray-900" id="stat-total">0</div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100">
+                        <div class="text-gray-400 text-sm font-medium mb-1">Avg Score</div>
+                        <div class="text-3xl font-black text-aured" id="stat-avg">0%</div>
+                    </div>
+                </div>
+
+                <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Recent History</h2>
+                <div id="history-list" class="space-y-3">
+                    <!-- History cards injected here -->
+                    <div class="text-center text-gray-400 py-6 text-sm" id="history-empty">No tests taken yet. Start a new test to see your history here!</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 2: SETUP (Difficulty & JSON Paste)  -->
+        <!-- ========================================== -->
+        <div id="screen-setup" class="absolute inset-0 z-20 bg-bgapp flex flex-col hidden">
+            <header class="bg-white px-5 py-4 flex items-center gap-4 shadow-sm z-10 shrink-0">
+                <button onclick="resetAndGoHome()" class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 active:bg-gray-200">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 class="font-bold text-gray-900 text-lg">Configure Test</h1>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-5 pb-24 scroll-smooth">
+                
+                <!-- Step 1: Difficulty -->
+                <div id="setup-step-1" class="fade-in">
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">1. Choose Difficulty</h2>
+                    <p class="text-sm text-gray-500 mb-6">Select the level of engineering questions you want the AI to generate.</p>
+                    
+                    <div class="space-y-3">
+                        <button onclick="selectDifficulty('Beginner')" class="w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden">
+                            <div class="font-bold text-gray-900 mb-1">Beginner</div>
+                            <div class="text-xs text-gray-500">Basic high-school level science and foundational math.</div>
+                        </button>
+                        <button onclick="selectDifficulty('Easy')" class="w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden">
+                            <div class="font-bold text-gray-900 mb-1">Easy</div>
+                            <div class="text-xs text-gray-500">Standard 11th-grade physics, chemistry, and algebra.</div>
+                        </button>
+                        <button onclick="selectDifficulty('Medium')" class="w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden" id="diff-medium">
+                            <div class="absolute top-0 right-0 bg-aured text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10">RECOMMENDED</div>
+                            <div class="font-bold text-gray-900 mb-1">Medium</div>
+                            <div class="text-xs text-gray-600">Standard engineering entrance exam level (JEE Mains equivalent).</div>
+                        </button>
+                        <button onclick="selectDifficulty('Hard')" class="w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden">
+                            <div class="font-bold text-gray-900 mb-1">Hard</div>
+                            <div class="text-xs text-gray-500">Advanced analytical problems and complex calculus.</div>
+                        </button>
+                        <button onclick="selectDifficulty('Expert')" class="w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden">
+                            <div class="font-bold text-gray-900 mb-1">Expert</div>
+                            <div class="text-xs text-gray-500">Olympiad-level engineering logic. Deep conceptual mastery required.</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: AI Prompt (Hidden initially) -->
+                <div id="setup-step-2" class="hidden fade-in mt-8 border-t border-gray-200 pt-8">
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">2. Generate Questions</h2>
+                    <p class="text-sm text-gray-500 mb-4">Copy the strict prompt below and paste it into <b class="text-blue-600">Google Gemini</b> to generate your unique test.</p>
+                    
+                    <div class="bg-gray-900 rounded-2xl p-4 relative mb-6 shadow-lg">
+                        <button onclick="copyPrompt()" id="btn-copy" class="absolute top-3 right-3 bg-white/20 hover:bg-white/30 text-white text-xs font-bold py-1.5 px-3 rounded-lg backdrop-blur-sm transition-colors flex items-center gap-1 z-10 cursor-pointer">
+                            <i class="far fa-copy"></i> Copy
+                        </button>
+                        <div class="h-40 overflow-y-auto pr-2">
+                             <p id="ai-prompt-text" class="text-gray-300 text-[10px] font-mono leading-relaxed pr-10 break-words select-all whitespace-pre-wrap"></p>
+                        </div>
+                    </div>
+
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">3. Import JSON Data</h2>
+                    <p class="text-sm text-gray-500 mb-4">Paste the raw JSON response generated by Gemini below.</p>
+                    
+                    <textarea id="json-input" class="w-full h-40 bg-white border-2 border-gray-200 rounded-2xl p-4 text-sm font-mono text-gray-800 focus:border-aured focus:ring-4 focus:ring-red-50 outline-none transition-all shadow-inner placeholder:text-gray-400" placeholder="Paste JSON here..."></textarea>
+                    
+                    <div id="json-error" class="text-aured text-sm font-bold mt-2 hidden flex items-center gap-2">
+                        <i class="fas fa-exclamation-circle"></i> <span>Invalid JSON format.</span>
+                    </div>
+
+                    <button onclick="validateAndStart()" class="w-full mt-6 py-4 bg-aured text-white font-bold rounded-2xl shadow-float active:bg-auredlight transition-colors flex justify-center items-center text-lg">
+                        Validate & Start Test
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 3: TEST APPLICATION                 -->
+        <!-- ========================================== -->
+        <div id="screen-test" class="absolute inset-0 z-30 bg-bgapp flex flex-col hidden">
+            
+            <header class="bg-white px-5 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-aured font-black text-xl">AU</div>
+                    <div>
+                        <h1 class="font-bold text-gray-900 leading-tight">AU-SET</h1>
+                        <p class="text-[10px] text-gray-500 font-semibold uppercase tracking-widest"><span id="test-diff-label">Medium</span> Level</p>
+                    </div>
+                </div>
+                <button onclick="togglePalette(true)" class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 active:bg-gray-200">
+                    <i class="fas fa-th-large text-lg"></i>
+                </button>
+            </header>
+
+            <div id="timer-bar" class="bg-white px-5 pb-3 border-b border-gray-100 z-10 shrink-0">
+                <div class="flex justify-between items-center text-sm font-semibold mb-2">
+                    <div class="flex items-center gap-2 text-gray-500">
+                        <i class="far fa-clock"></i> <span id="time-passed">00:00</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-aured bg-red-50 px-3 py-1 rounded-full" id="time-left-badge">
+                        <span id="time-left">60:00</span> Left
+                    </div>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-1.5 mb-1 overflow-hidden">
+                    <div id="progress-bar" class="bg-aured h-1.5 rounded-full transition-all duration-1000 w-0"></div>
+                </div>
+            </div>
+
+            <main id="main-content" class="flex-1 overflow-y-auto p-5 relative scroll-smooth">
+                <div class="bg-white rounded-3xl shadow-soft p-6 mb-6" id="q-card">
+                    <div class="flex justify-between items-start mb-5">
+                        <span class="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg tracking-wide">
+                            Question <span id="q-number" class="text-aured">1</span> / <span id="q-total">60</span>
+                        </span>
+                        <button onclick="toggleMark()" id="btn-mark" class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 border-2 border-augold text-augold bg-transparent">
+                            <i class="far fa-flag" id="mark-icon"></i> <span id="mark-text">Mark</span>
+                        </button>
+                    </div>
+                    
+                    <h2 id="q-text" class="text-[1.1rem] font-semibold text-gray-800 leading-snug mb-6">Question</h2>
+
+                    <div id="options-container" class="space-y-3"></div>
+                    
+                    <div class="mt-5 flex justify-end">
+                        <button onclick="clearSelection()" id="btn-clear" class="text-sm text-gray-400 font-medium active:text-gray-600 hidden flex items-center gap-1">
+                            <i class="fas fa-eraser text-xs"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                <div class="h-24"></div>
+            </main>
+
+            <footer id="bottom-nav" class="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-bgapp via-bgapp to-transparent z-10 flex gap-3 pointer-events-none">
+                <div class="flex w-full gap-3 pointer-events-auto">
+                    <button onclick="navPrev()" id="btn-prev" class="w-14 h-14 shrink-0 bg-white border border-gray-200 text-gray-600 font-bold rounded-2xl shadow-sm active:bg-gray-50 flex justify-center items-center disabled:opacity-50 transition-all">
+                        <i class="fas fa-chevron-left text-lg"></i>
+                    </button>
+                    <button onclick="navNext()" id="btn-next" class="flex-1 h-14 bg-aured text-white font-bold text-lg rounded-2xl shadow-float active:bg-auredlight flex justify-center items-center transition-all">
+                        Next <i class="fas fa-chevron-right ml-2 text-sm"></i>
+                    </button>
+                </div>
+            </footer>
+
+            <!-- Palette Overlay -->
+            <div id="palette-overlay" onclick="togglePalette(false)" class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity duration-300"></div>
+            <div id="palette-drawer" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2rem] z-50 transform translate-y-full transition-transform duration-300 ease-out flex flex-col h-[80%] shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+                <div onclick="togglePalette(false)" class="w-full flex justify-center pt-3 pb-1 cursor-pointer">
+                    <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+                </div>
+                <div class="px-6 py-3 flex justify-between items-center">
+                    <h3 class="font-bold text-gray-900 text-xl">Questions</h3>
+                    <button onclick="togglePalette(false)" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 active:bg-gray-200"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="px-6 py-4 flex justify-between text-[10px] font-bold uppercase tracking-wide border-b border-gray-100">
+                    <div class="flex flex-col items-center gap-1"><div class="w-6 h-6 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center text-gray-400" id="pal-unans">0</div> <span class="text-gray-400">Unanswered</span></div>
+                    <div class="flex flex-col items-center gap-1"><div class="w-6 h-6 rounded-full bg-aured text-white flex items-center justify-center" id="pal-ans">0</div> <span class="text-aured">Answered</span></div>
+                    <div class="flex flex-col items-center gap-1"><div class="w-6 h-6 rounded-full bg-augold text-white flex items-center justify-center" id="pal-mark">0</div> <span class="text-augold">Marked</span></div>
+                </div>
+                <div class="flex-1 overflow-y-auto px-6 py-5 bg-gray-50">
+                    <div id="palette-grid" class="grid grid-cols-5 gap-3"></div>
+                </div>
+                <div class="p-5 bg-white border-t border-gray-100">
+                    <button onclick="showSubmitModal()" class="w-full h-14 bg-gray-900 text-white font-bold rounded-2xl text-lg shadow-md active:bg-black transition-all flex justify-center items-center">
+                        Submit Final Test
+                    </button>
+                </div>
+            </div>
+
+            <!-- Custom Submit Modal -->
+            <div id="submit-modal" class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm z-[60] hidden items-center justify-center p-5 opacity-0 transition-opacity duration-300">
+                <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 transform scale-95 transition-transform duration-300" id="submit-modal-card">
+                    <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4 mx-auto text-aured text-2xl"><i class="fas fa-paper-plane"></i></div>
+                    <h3 class="text-xl font-bold text-center text-gray-900 mb-2">Submit Test?</h3>
+                    <p class="text-center text-gray-500 text-sm mb-6" id="submit-modal-text"></p>
+                    <div class="flex gap-3">
+                        <button onclick="hideSubmitModal()" class="flex-1 py-3.5 bg-gray-100 text-gray-700 font-bold rounded-xl active:bg-gray-200 transition-colors">Cancel</button>
+                        <button onclick="processSubmission()" class="flex-1 py-3.5 bg-aured text-white font-bold rounded-xl active:bg-red-800 shadow-float transition-colors">Yes, Submit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 4: RESULTS                          -->
+        <!-- ========================================== -->
+        <div id="screen-result" class="absolute inset-0 z-[100] bg-bgapp flex flex-col hidden w-full h-full overflow-hidden">
+            <header class="bg-white px-5 py-6 text-center shadow-sm shrink-0 rounded-b-3xl relative z-10">
+                <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center text-green-500 text-2xl mx-auto mb-3">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h1 class="font-bold text-2xl text-gray-900 mb-1">Test Details</h1>
+                <p class="text-sm text-gray-500 font-medium">AU-SET Engineering Test</p>
+            </header>
+            
+            <div class="flex-1 overflow-y-auto p-5 relative z-0 -mt-4 pt-10 scroll-smooth">
+                <div class="bg-gray-900 rounded-[2rem] shadow-float p-8 mb-6 text-center relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-10 -mt-10"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full -ml-8 -mb-8"></div>
+                    
+                    <h2 class="text-gray-400 font-bold uppercase tracking-widest text-xs mb-3 relative z-10">Final Score (<span id="res-diff"></span>)</h2>
+                    <div class="text-white relative z-10 flex justify-center items-baseline gap-1">
+                        <span id="score-val" class="text-7xl font-black tracking-tighter">0</span>
+                        <span class="text-2xl text-gray-500 font-bold">/ <span id="score-total">60</span></span>
+                    </div>
+                </div>
+
+                <button onclick="resetAndGoHome()" class="w-full py-4 mb-8 bg-aured text-white font-bold rounded-2xl shadow-float active:bg-auredlight transition-colors flex justify-center items-center gap-2 text-lg">
+                    <i class="fas fa-home"></i> Back to Dashboard
+                </button>
+
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="h-px bg-gray-300 flex-1"></div>
+                    <h3 class="font-bold text-sm text-gray-400 uppercase tracking-widest">Detailed Analysis</h3>
+                    <div class="h-px bg-gray-300 flex-1"></div>
+                </div>
+
+                <div id="result-details" class="space-y-4 pb-12"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- 1. CORE DATA & STORAGE ---
+        const STORAGE_KEY = 'auset_platform_v2'; 
+        const TEST_DURATION_MS = 60 * 60 * 1000; // 60 mins
+        
+        let appState = {
+            history: [], // { date, difficulty, score, total }
+            activeTest: null // { questions, startTime, answers, marked, currentQ, difficulty }
+        };
+        
+        let timerInterval = null;
+        let selectedDifficulty = null; // No auto-selection
+
+        // --- 2. BOOTSTRAP ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            if (appState.activeTest) {
+                // Resume active test
+                document.getElementById('test-diff-label').textContent = appState.activeTest.difficulty;
+                switchScreen('screen-test');
+                buildPalette();
+                renderQuestion(false);
+                startTimer();
+            } else {
+                // Show dashboard
+                renderDashboard();
+                switchScreen('screen-dashboard');
+            }
+        });
+
+        function loadState() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) appState = JSON.parse(saved);
+        }
+
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        }
+
+        // --- 3. UI NAVIGATION ---
+        function switchScreen(screenId) {
+            ['screen-dashboard', 'screen-setup', 'screen-test', 'screen-result'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            const target = document.getElementById(screenId);
+            target.classList.remove('hidden');
+            
+            // Add slide up animation
+            target.classList.remove('slide-up');
+            void target.offsetWidth; 
+            target.classList.add('slide-up');
+        }
+
+        // --- 4. DASHBOARD LOGIC ---
+        function renderDashboard() {
+            const history = appState.history || [];
+            
+            // Stats
+            document.getElementById('stat-total').textContent = history.length;
+            let avg = 0;
+            if (history.length > 0) {
+                let totalPct = history.reduce((acc, test) => acc + (test.score / test.total * 100), 0);
+                avg = Math.round(totalPct / history.length);
+            }
+            document.getElementById('stat-avg').textContent = `${avg}%`;
+
+            // History List
+            const listEl = document.getElementById('history-list');
+            const emptyEl = document.getElementById('history-empty');
+            
+            if (history.length === 0) {
+                emptyEl.classList.remove('hidden');
+                listEl.querySelectorAll('.hist-card').forEach(e => e.remove());
+            } else {
+                emptyEl.classList.add('hidden');
+                listEl.querySelectorAll('.hist-card').forEach(e => e.remove());
+                
+                // Show latest 10, reversed
+                const reversedHistory = [...history].reverse().slice(0, 10);
+                reversedHistory.forEach((test, index) => {
+                    const pct = Math.round((test.score / test.total) * 100);
+                    let color = pct >= 80 ? 'text-green-600 bg-green-50 border-green-200' : (pct >= 50 ? 'text-augold bg-orange-50 border-orange-200' : 'text-aured bg-red-50 border-red-200');
+                    
+                    const dateStr = new Date(test.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                    
+                    const card = document.createElement('div');
+                    card.className = 'hist-card bg-white p-4 rounded-xl shadow-soft border border-gray-100 flex justify-between items-center cursor-pointer hover:border-aured hover:shadow-md transition-all';
+                    
+                    // Add click event to view past test
+                    const actualIndex = history.length - 1 - index;
+                    card.onclick = () => viewPastTest(actualIndex);
+
+                    card.innerHTML = `
+                        <div>
+                            <div class="font-bold text-gray-900">${test.difficulty} Test</div>
+                            <div class="text-xs text-gray-500">${dateStr}</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="px-3 py-1.5 rounded-lg font-black text-sm border ${color}">
+                                ${test.score} / ${test.total}
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-300 text-sm"></i>
+                        </div>
+                    `;
+                    listEl.appendChild(card);
+                });
+            }
+        }
+
+        function viewPastTest(index) {
+            const record = appState.history[index];
+            if(record) {
+                renderResultsView(record);
+            }
+        }
+
+        // --- 5. SETUP & PROMPT LOGIC ---
+        function selectDifficulty(level) {
+            selectedDifficulty = level;
+            
+            // Reset styles
+            const buttons = document.querySelectorAll('#setup-step-1 button');
+            buttons.forEach(btn => {
+                btn.className = "w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden";
+                btn.querySelector('div.font-bold').classList.replace('text-aured', 'text-gray-900');
+            });
+
+            // Set active style
+            buttons.forEach(btn => {
+                if(btn.querySelector('.font-bold').textContent.trim() === level) {
+                     btn.className = "w-full text-left p-4 rounded-2xl bg-white border-2 border-aured ring-4 ring-red-50 transition-colors relative overflow-hidden";
+                     btn.querySelector('div.font-bold').classList.replace('text-gray-900', 'text-aured');
+                }
+            });
+
+            // Generate Highly Detailed Encrypted Prompt
+            const prompt = `Act as an expert engineering entrance exam creator. Generate exactly 60 multiple-choice questions for the AU-SET Exam at a [ ${level.toUpperCase()} ] difficulty level.
+
+CRITICAL INSTRUCTIONS:
+1. Composition: 20 Physics questions, 20 Chemistry questions, and 20 Mathematics questions.
+2. Format: You MUST output ONLY a valid JSON array of objects inside a single markdown code block.
+3. No Conversation: Do NOT include any text outside the code block.
+4. Structure: The JSON array MUST contain exactly 60 objects matching this precise structure:
+[
+  {
+    "q": "What is the SI unit of Electric Current?",
+    "options": ["Volt", "Ampere", "Ohm", "Coulomb"],
+    "ans": "Y2B"
+  }
+]
+5. ENCRYPTED 'ans' Key: Do NOT output the raw integer index. You MUST encode the correct index (0-3) using this exact mapping:
+Index 0 -> "X9A"
+Index 1 -> "Y2B"
+Index 2 -> "Z7C"
+Index 3 -> "W4D"
+The 'ans' value MUST be one of these 4 strings exactly.
+
+Provide the JSON now.`;
+            
+            document.getElementById('ai-prompt-text').textContent = prompt;
+            
+            // Show step 2
+            const step2 = document.getElementById('setup-step-2');
+            step2.classList.remove('hidden');
+            setTimeout(() => step2.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        }
+
+        function copyPrompt() {
+            const textToCopy = document.getElementById('ai-prompt-text').textContent;
+            
+            // Robust copy mechanism (works even in restricted iframes)
+            const fallbackCopyTextToClipboard = (text) => {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";  // Avoid scrolling to bottom
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                }
+                document.body.removeChild(textArea);
+            };
+
+            if (!navigator.clipboard) {
+                fallbackCopyTextToClipboard(textToCopy);
+                showCopySuccess();
+                return;
+            }
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showCopySuccess();
+            }).catch(err => {
+                fallbackCopyTextToClipboard(textToCopy);
+                showCopySuccess();
+            });
+        }
+
+        function showCopySuccess() {
+            const btn = document.getElementById('btn-copy');
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            btn.classList.replace('bg-white/20', 'bg-green-500');
+            setTimeout(() => {
+                btn.innerHTML = '<i class="far fa-copy"></i> Copy';
+                btn.classList.replace('bg-green-500', 'bg-white/20');
+            }, 2000);
+        }
+
+        function validateAndStart() {
+            const rawInput = document.getElementById('json-input').value.trim();
+            const errorEl = document.getElementById('json-error');
+            
+            if(!rawInput) {
+                showError("Please paste the JSON from Gemini.");
+                return;
+            }
+
+            try {
+                // Cleanup JSON formatting
+                let cleanJson = rawInput.replace(/^```json/i, '').replace(/```$/i, '').trim();
+                if(cleanJson.startsWith('```')) cleanJson = cleanJson.replace(/^```/, '').trim();
+                
+                const data = JSON.parse(cleanJson);
+                
+                if(!Array.isArray(data) || data.length === 0) {
+                    throw new Error("Data must be a non-empty array.");
+                }
+
+                // Decrypt mapping dictionary
+                const decodeMap = { "X9A": 0, "Y2B": 1, "Z7C": 2, "W4D": 3 };
+
+                // Validate and Decrypt Answers
+                const decryptedData = data.map((q, index) => {
+                    if(!q.q || !Array.isArray(q.options) || q.options.length !== 4) {
+                        throw new Error(`Invalid structure at question ${index + 1}. Must have 'q' and 4 'options'.`);
+                    }
+                    
+                    const decodedAns = decodeMap[q.ans];
+                    if (decodedAns === undefined) {
+                        throw new Error(`Answer encryption missing at question ${index + 1}. AI did not follow prompt instructions.`);
+                    }
+
+                    return { ...q, ans: decodedAns };
+                });
+
+                // Setup active test
+                appState.activeTest = {
+                    difficulty: selectedDifficulty,
+                    questions: decryptedData,
+                    startTime: Date.now(),
+                    answers: {},
+                    marked: {},
+                    currentQ: 0
+                };
+                
+                saveState();
+                errorEl.classList.add('hidden');
+                document.getElementById('json-input').value = ''; // clear
+                
+                // Initialize Test UI
+                document.getElementById('test-diff-label').textContent = selectedDifficulty;
+                document.getElementById('q-total').textContent = decryptedData.length;
+                buildPalette();
+                renderQuestion(true);
+                switchScreen('screen-test');
+                startTimer();
+
+            } catch (err) {
+                showError("Invalid Data: " + err.message);
+            }
+        }
+
+        function showError(msg) {
+            const errorEl = document.getElementById('json-error');
+            errorEl.querySelector('span').textContent = msg;
+            errorEl.classList.remove('hidden');
+        }
+
+        // --- 6. TEST EXECUTION LOGIC ---
+        function startTimer() {
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+            updateTimer(); 
+        }
+
+        function updateTimer() {
+            if(!appState.activeTest) return;
+            
+            const now = Date.now();
+            let elapsedMs = now - appState.activeTest.startTime;
+            
+            if (elapsedMs >= TEST_DURATION_MS) {
+                elapsedMs = TEST_DURATION_MS;
+                processSubmission(); // Auto submit
+            }
+
+            const leftMs = Math.max(0, TEST_DURATION_MS - elapsedMs);
+            const badge = document.getElementById('time-left-badge');
+
+            document.getElementById('time-passed').textContent = formatTime(elapsedMs);
+            document.getElementById('time-left').textContent = formatTime(leftMs);
+            document.getElementById('progress-bar').style.width = `${(elapsedMs / TEST_DURATION_MS) * 100}%`;
+
+            if (leftMs < 5 * 60 * 1000) {
+                badge.classList.replace('bg-red-50', 'bg-red-600');
+                badge.classList.replace('text-aured', 'text-white');
+                badge.classList.add('animate-pulse');
+            }
+        }
+
+        function formatTime(ms) {
+            const ts = Math.floor(ms / 1000);
+            return `${Math.floor(ts / 60).toString().padStart(2, '0')}:${(ts % 60).toString().padStart(2, '0')}`;
+        }
+
+        function renderQuestion(animate = true) {
+            const test = appState.activeTest;
+            const qIndex = test.currentQ;
+            const qData = test.questions[qIndex];
+            const qCard = document.getElementById('q-card');
+            
+            if (animate) {
+                qCard.classList.remove('fade-in');
+                void qCard.offsetWidth;
+                qCard.classList.add('fade-in');
+            }
+            
+            document.getElementById('q-number').textContent = qIndex + 1;
+            document.getElementById('q-text').textContent = qData.q;
+            
+            const optsContainer = document.getElementById('options-container');
+            optsContainer.innerHTML = '';
+            
+            qData.options.forEach((optText, optIndex) => {
+                const isSelected = test.answers[qIndex] === optIndex;
+                const label = document.createElement('label');
+                label.className = `relative flex cursor-pointer rounded-2xl border-2 transition-all p-4 items-center gap-4 ${isSelected ? 'border-aured bg-red-50/50 shadow-sm' : 'border-gray-100 bg-white'}`;
+                label.innerHTML = `
+                    <input type="radio" name="opt" value="${optIndex}" ${isSelected ? 'checked' : ''} class="option-radio sr-only">
+                    <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200 ${isSelected ? 'border-aured bg-aured' : 'border-gray-300 bg-white'}">
+                        <svg class="h-3.5 w-3.5 text-white transition-transform duration-200 ${isSelected ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <span class="text-gray-700 leading-snug ${isSelected ? 'font-semibold text-gray-900' : ''}">${optText}</span>
+                `;
+                label.querySelector('input').addEventListener('change', () => selectOption(qIndex, optIndex));
+                optsContainer.appendChild(label);
+            });
+
+            // Nav
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            btnPrev.disabled = (qIndex === 0);
+            
+            if (qIndex === test.questions.length - 1) {
+                btnNext.innerHTML = 'Submit <i class="fas fa-check-circle ml-2"></i>';
+                btnNext.classList.replace('bg-aured', 'bg-gray-900');
+            } else {
+                btnNext.innerHTML = 'Next <i class="fas fa-chevron-right ml-2 text-sm"></i>';
+                btnNext.classList.replace('bg-gray-900', 'bg-aured');
+            }
+
+            updateMarkButton();
+            document.getElementById('btn-clear').classList.toggle('hidden', test.answers[qIndex] === undefined);
+            updatePaletteCurrent();
+        }
+
+        function selectOption(qIndex, optIndex) {
+            appState.activeTest.answers[qIndex] = optIndex;
+            saveState();
+            renderQuestion(false);
+            updatePaletteColors();
+        }
+
+        function navNext() {
+            const test = appState.activeTest;
+            if (test.currentQ < test.questions.length - 1) {
+                test.currentQ++;
+                saveState();
+                renderQuestion(true);
+            } else {
+                showSubmitModal();
+            }
+        }
+
+        function navPrev() {
+            if (appState.activeTest.currentQ > 0) {
+                appState.activeTest.currentQ--;
+                saveState();
+                renderQuestion(true);
+            }
+        }
+
+        function toggleMark() {
+            const test = appState.activeTest;
+            test.marked[test.currentQ] = !test.marked[test.currentQ];
+            saveState();
+            updateMarkButton();
+            updatePaletteColors();
+        }
+
+        function clearSelection() {
+            delete appState.activeTest.answers[appState.activeTest.currentQ];
+            saveState();
+            renderQuestion(false);
+            updatePaletteColors();
+        }
+
+        function updateMarkButton() {
+            const isMarked = appState.activeTest.marked[appState.activeTest.currentQ];
+            const btn = document.getElementById('btn-mark');
+            const icon = document.getElementById('mark-icon');
+            
+            btn.className = "text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 border-2";
+            if (isMarked) {
+                btn.classList.add('bg-augold', 'border-augold', 'text-white');
+                document.getElementById('mark-text').textContent = "Marked";
+                icon.className = "fas fa-flag";
+            } else {
+                btn.classList.add('bg-transparent', 'border-augold', 'text-augold');
+                document.getElementById('mark-text').textContent = "Mark";
+                icon.className = "far fa-flag";
+            }
+        }
+
+        // --- 7. PALETTE LOGIC ---
+        function buildPalette() {
+            const grid = document.getElementById('palette-grid');
+            grid.innerHTML = '';
+            const len = appState.activeTest.questions.length;
+            
+            for (let i = 0; i < len; i++) {
+                const btn = document.createElement('button');
+                btn.className = `w-full aspect-square rounded-xl font-bold text-sm flex items-center justify-center transition-all border-2`;
+                btn.textContent = i + 1;
+                btn.id = `pal-btn-${i}`;
+                btn.onclick = () => {
+                    appState.activeTest.currentQ = i;
+                    saveState();
+                    renderQuestion(true);
+                    togglePalette(false);
+                };
+                grid.appendChild(btn);
+            }
+            updatePaletteColors();
+        }
+
+        function updatePaletteColors() {
+            const test = appState.activeTest;
+            let ansCount = 0, markCount = 0;
+            
+            for (let i = 0; i < test.questions.length; i++) {
+                const btn = document.getElementById(`pal-btn-${i}`);
+                if (!btn) continue;
+                
+                const isAnswered = test.answers[i] !== undefined;
+                const isMarked = test.marked[i];
+                
+                btn.className = `w-full aspect-square rounded-xl font-bold text-sm flex items-center justify-center transition-all border-2 relative`;
+                
+                if (isMarked) {
+                    btn.classList.add('bg-augold', 'border-augold', 'text-white');
+                    markCount++;
+                    if(isAnswered) ansCount++;
+                } else if (isAnswered) {
+                    btn.classList.add('bg-aured', 'border-aured', 'text-white');
+                    ansCount++;
+                } else {
+                    btn.classList.add('bg-white', 'border-gray-200', 'text-gray-500');
+                }
+            }
+
+            document.getElementById('pal-unans').textContent = test.questions.length - ansCount;
+            document.getElementById('pal-ans').textContent = ansCount;
+            document.getElementById('pal-mark').textContent = markCount;
+            updatePaletteCurrent();
+        }
+
+        function updatePaletteCurrent() {
+            const test = appState.activeTest;
+            for (let i = 0; i < test.questions.length; i++) {
+                const btn = document.getElementById(`pal-btn-${i}`);
+                if (btn) btn.classList.remove('ring-4', 'ring-red-200', 'scale-[1.05]');
+            }
+            const currBtn = document.getElementById(`pal-btn-${test.currentQ}`);
+            if (currBtn) currBtn.classList.add('ring-4', 'ring-red-200', 'scale-[1.05]');
+        }
+
+        function togglePalette(show) {
+            const overlay = document.getElementById('palette-overlay');
+            const drawer = document.getElementById('palette-drawer');
+            if (show) {
+                overlay.classList.remove('hidden');
+                setTimeout(() => {
+                    overlay.classList.remove('opacity-0');
+                    drawer.classList.remove('translate-y-full');
+                }, 10);
+            } else {
+                drawer.classList.add('translate-y-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
+        // --- 8. SUBMISSION & RESULTS ---
+        function showSubmitModal() {
+            const test = appState.activeTest;
+            const ansCount = Object.keys(test.answers).length;
+            document.getElementById('submit-modal-text').innerHTML = `You answered <b>${ansCount}</b> of <b>${test.questions.length}</b> questions.<br>Once submitted, you cannot edit answers.`;
+            
+            const modal = document.getElementById('submit-modal');
+            const card = document.getElementById('submit-modal-card');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function hideSubmitModal() {
+            const modal = document.getElementById('submit-modal');
+            const card = document.getElementById('submit-modal-card');
+            modal.classList.add('opacity-0');
+            card.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
+        function processSubmission() {
+            hideSubmitModal();
+            if(timerInterval) clearInterval(timerInterval);
+            
+            const test = appState.activeTest;
+            let score = 0;
+            
+            test.questions.forEach((q, i) => {
+                if (test.answers[i] === q.ans) score++;
+            });
+
+            // Save to history
+            const resultRecord = {
+                date: Date.now(),
+                difficulty: test.difficulty,
+                score: score,
+                total: test.questions.length,
+                questions: test.questions,
+                answers: test.answers
+            };
+            
+            appState.history.push(resultRecord);
+            appState.activeTest = null; // Clear active test
+            saveState();
+            
+            renderResultsView(resultRecord);
+        }
+
+        function renderResultsView(record) {
+            switchScreen('screen-result');
+            
+            document.getElementById('res-diff').textContent = record.difficulty;
+            document.getElementById('score-total').textContent = record.total;
+            
+            // Animate Score
+            const elScore = document.getElementById('score-val');
+            let current = 0;
+            elScore.textContent = 0;
+            if(record.score > 0) {
+                const iv = setInterval(() => {
+                    current++;
+                    elScore.textContent = current;
+                    if(current >= record.score) clearInterval(iv);
+                }, 30);
+            }
+
+            // Detailed Analysis
+            const detailContainer = document.getElementById('result-details');
+            detailContainer.innerHTML = '';
+            
+            record.questions.forEach((q, index) => {
+                const userAns = record.answers[index];
+                const isAttempted = userAns !== undefined;
+                const isCorrect = userAns === q.ans;
+                
+                let themeClass = "border-gray-200 bg-white";
+                let iconHtml = `<span class="bg-gray-100 text-gray-500 px-2 py-1 rounded text-xs font-bold"><i class="fas fa-minus"></i> Omitted</span>`;
+                
+                if (isAttempted) {
+                    if (isCorrect) {
+                        themeClass = "border-green-500 bg-green-50/30";
+                        iconHtml = `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold"><i class="fas fa-check"></i> Correct</span>`;
+                    } else {
+                        themeClass = "border-red-300 bg-red-50/30";
+                        iconHtml = `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold"><i class="fas fa-times"></i> Wrong</span>`;
+                    }
+                }
+
+                const el = document.createElement('div');
+                el.className = `p-5 rounded-2xl border-l-[6px] border-t border-r border-b shadow-sm ${themeClass}`;
+                
+                let html = `
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="font-black text-gray-900 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center">${index + 1}</span>
+                        ${iconHtml}
+                    </div>
+                    <p class="text-gray-800 mb-4 font-medium leading-relaxed">${q.q}</p>
+                    <div class="space-y-2 text-sm">
+                `;
+
+                if (isAttempted && !isCorrect) {
+                    html += `
+                        <div class="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-900">
+                            <i class="fas fa-times-circle mt-1 text-red-500 shrink-0"></i>
+                            <div><span class="font-bold block text-xs uppercase text-red-500 mb-0.5">Your Answer</span> ${q.options[userAns]}</div>
+                        </div>`;
+                }
+                
+                html += `
+                    <div class="flex items-start gap-2 p-3 rounded-xl bg-green-50 text-green-900">
+                        <i class="fas fa-check-circle mt-1 text-green-500 shrink-0"></i>
+                        <div><span class="font-bold block text-xs uppercase text-green-600 mb-0.5">Correct Answer</span> ${q.options[q.ans]}</div>
+                    </div></div>`;
+                
+                el.innerHTML = html;
+                detailContainer.appendChild(el);
+            });
+        }
+
+        function resetAndGoHome() {
+            renderDashboard();
+            switchScreen('screen-dashboard');
+            
+            // Reset Setup Screen visually for next time
+            document.getElementById('setup-step-2').classList.add('hidden');
+            selectedDifficulty = null; // Reset selection
+            
+            const buttons = document.querySelectorAll('#setup-step-1 button');
+            buttons.forEach(btn => {
+                btn.className = "w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden";
+                btn.querySelector('div.font-bold').classList.replace('text-aured', 'text-gray-900');
+            });
+        }
+
+    </script>
+</body>
+</html>
