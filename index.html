@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AU-SET AI Engineering Test</title>
+    <title>AU-SET AI Computer Science Test</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,6 +40,9 @@
         /* Custom UI Radio toggle */
         .option-radio:checked + div { border-color: #D92D20; background-color: #D92D20; }
         .option-radio:checked + div svg { opacity: 1; transform: scale(1); }
+        
+        /* Anti-cheat selection prevent class */
+        .prevent-copy { user-select: none; -webkit-user-select: none; }
     </style>
 </head>
 <body class="bg-gray-200 text-gray-900 font-sans h-[100dvh] flex flex-col items-center justify-center selection:bg-red-200">
@@ -51,7 +54,7 @@
         <!-- SCREEN 1: DASHBOARD (Stats & History)      -->
         <!-- ========================================== -->
         <div id="screen-dashboard" class="absolute inset-0 z-10 bg-bgapp flex flex-col hidden overflow-y-auto pb-10">
-            <header class="bg-white px-6 py-6 rounded-b-3xl shadow-sm mb-6 shrink-0 relative">
+            <header class="bg-white px-6 py-6 rounded-b-3xl shadow-sm mb-6 shrink-0 relative flex justify-between items-start">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-aured font-black text-2xl">AU</div>
                     <div>
@@ -59,12 +62,17 @@
                         <p class="text-xs text-gray-500 font-semibold uppercase tracking-widest">AI Test Platform</p>
                     </div>
                 </div>
-                <button onclick="switchScreen('screen-setup')" class="w-full py-4 bg-aured text-white font-bold rounded-2xl shadow-float active:bg-auredlight transition-colors flex justify-center items-center gap-2 text-lg">
-                    <i class="fas fa-play"></i> Start New Test
+                <!-- Preferences/Settings Button -->
+                <button onclick="openSettings()" class="w-10 h-10 rounded-full bg-gray-50 text-gray-500 flex justify-center items-center hover:bg-gray-100 active:bg-gray-200 transition-colors">
+                    <i class="fas fa-cog"></i>
                 </button>
             </header>
 
-            <div class="px-6 flex-1">
+            <div class="px-6 flex-1 flex flex-col">
+                <button onclick="showDisclaimer()" class="w-full py-4 mb-6 bg-aured text-white font-bold rounded-2xl shadow-float active:bg-auredlight transition-colors flex justify-center items-center gap-2 text-lg">
+                    <i class="fas fa-play"></i> Start New Test
+                </button>
+
                 <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Your Statistics</h2>
                 <div class="grid grid-cols-2 gap-4 mb-8">
                     <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100">
@@ -78,7 +86,7 @@
                 </div>
 
                 <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Recent History</h2>
-                <div id="history-list" class="space-y-3">
+                <div id="history-list" class="space-y-3 mb-6">
                     <!-- History cards injected here -->
                     <div class="text-center text-gray-400 py-6 text-sm" id="history-empty">No tests taken yet. Start a new test to see your history here!</div>
                 </div>
@@ -101,34 +109,37 @@
                 <!-- Step 1: Difficulty -->
                 <div id="setup-step-1" class="fade-in">
                     <h2 class="text-xl font-bold text-gray-900 mb-2">1. Choose Difficulty</h2>
-                    <p class="text-sm text-gray-500 mb-6">Select the level of engineering questions you want the AI to generate.</p>
+                    <p class="text-sm text-gray-500 mb-4">Select the level of Computer Science questions you want the AI to generate.</p>
+                    <div class="bg-red-50 text-aured p-3 rounded-xl text-xs font-semibold mb-6 border border-red-100">
+                        <i class="fas fa-info-circle mr-1"></i> You may start at the Beginner or Easy level for practice, but you need to be at the <span class="font-bold uppercase underline">Expert level</span> to be really eligible for the final test.
+                    </div>
                     
                     <div class="space-y-3">
                         <button onclick="selectDifficulty('Beginner')" class="w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden">
                             <div class="font-bold text-gray-900 mb-1">Beginner</div>
-                            <div class="text-xs text-gray-500">Basic high-school level science and foundational math.</div>
+                            <div class="text-xs text-gray-500">Basic computer literacy and elementary math/logic.</div>
                         </button>
                         <button onclick="selectDifficulty('Easy')" class="w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden">
                             <div class="font-bold text-gray-900 mb-1">Easy</div>
-                            <div class="text-xs text-gray-500">Standard 11th-grade physics, chemistry, and algebra.</div>
+                            <div class="text-xs text-gray-500">Standard 11th-grade level logic and fundamentals.</div>
                         </button>
                         <button onclick="selectDifficulty('Medium')" class="w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden" id="diff-medium">
                             <div class="absolute top-0 right-0 bg-aured text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10">RECOMMENDED</div>
                             <div class="font-bold text-gray-900 mb-1">Medium</div>
-                            <div class="text-xs text-gray-600">Standard engineering entrance exam level (JEE Mains equivalent).</div>
+                            <div class="text-xs text-gray-600">Standard BCA / B.Sc CS entrance exam level.</div>
                         </button>
                         <button onclick="selectDifficulty('Hard')" class="w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden">
                             <div class="font-bold text-gray-900 mb-1">Hard</div>
-                            <div class="text-xs text-gray-500">Advanced analytical problems and complex calculus.</div>
+                            <div class="text-xs text-gray-500">Advanced programming logic, tough reasoning, and higher math.</div>
                         </button>
                         <button onclick="selectDifficulty('Expert')" class="w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden">
                             <div class="font-bold text-gray-900 mb-1">Expert</div>
-                            <div class="text-xs text-gray-500">Olympiad-level engineering logic. Deep conceptual mastery required.</div>
+                            <div class="text-xs text-gray-500">Highly competitive level. Required to clear the final test!</div>
                         </button>
                     </div>
                 </div>
 
-                <!-- Step 2: AI Prompt (Hidden initially) -->
+                <!-- Step 2: AI Prompt -->
                 <div id="setup-step-2" class="hidden fade-in mt-8 border-t border-gray-200 pt-8">
                     <h2 class="text-xl font-bold text-gray-900 mb-2">2. Generate Questions</h2>
                     <p class="text-sm text-gray-500 mb-4">Copy the strict prompt below and paste it into <b class="text-blue-600">Google Gemini</b> to generate your unique test.</p>
@@ -191,7 +202,7 @@
                 </div>
             </div>
 
-            <main id="main-content" class="flex-1 overflow-y-auto p-5 relative scroll-smooth">
+            <main id="main-content" class="flex-1 overflow-y-auto p-5 relative scroll-smooth test-area">
                 <div class="bg-white rounded-3xl shadow-soft p-6 mb-6" id="q-card">
                     <div class="flex justify-between items-start mb-5">
                         <span class="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg tracking-wide">
@@ -263,6 +274,15 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Window Switch Penalty Overlay -->
+            <div id="cheat-block-overlay" class="absolute inset-0 bg-aured/95 backdrop-blur-md z-[9999] hidden flex-col items-center justify-center p-6 text-center text-white">
+                <i class="fas fa-exclamation-triangle text-6xl mb-4 opacity-90"></i>
+                <h2 class="text-2xl font-bold mb-2">Window Switch Detected</h2>
+                <p class="text-sm opacity-90 mb-8">You navigated away from the test. As per settings, the test is paused.</p>
+                <div class="text-6xl font-black mb-4" id="cheat-block-counter">10</div>
+                <p class="text-sm uppercase tracking-widest font-semibold opacity-75">Seconds Remaining</p>
+            </div>
         </div>
 
         <!-- ========================================== -->
@@ -274,7 +294,7 @@
                     <i class="fas fa-check"></i>
                 </div>
                 <h1 class="font-bold text-2xl text-gray-900 mb-1">Test Details</h1>
-                <p class="text-sm text-gray-500 font-medium">AU-SET Engineering Test</p>
+                <p class="text-sm text-gray-500 font-medium">AU-SET Computer Science Test</p>
             </header>
             
             <div class="flex-1 overflow-y-auto p-5 relative z-0 -mt-4 pt-10 scroll-smooth">
@@ -303,34 +323,103 @@
             </div>
         </div>
 
+        <!-- ========================================== -->
+        <!-- MODALS (Settings & Disclaimer)             -->
+        <!-- ========================================== -->
+        
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm z-[200] hidden items-center justify-center p-5 opacity-0 transition-opacity duration-300">
+            <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="settings-card">
+                <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="font-bold text-gray-900 text-lg"><i class="fas fa-sliders-h mr-2 text-gray-500"></i> Preferences</h3>
+                    <button onclick="closeSettings()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
+                </div>
+                <div class="p-5 space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="font-semibold text-gray-800 text-sm">Disable Copying</div>
+                            <div class="text-xs text-gray-500 mt-0.5">Prevent copying question text.</div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="pref-copy" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-aured"></div>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="font-semibold text-gray-800 text-sm">Restrict Tab Switch</div>
+                            <div class="text-xs text-gray-500 mt-0.5">Block user if they switch windows.</div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="pref-switch" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-aured"></div>
+                        </label>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-800 text-sm mb-2">Block Timer (Seconds)</label>
+                        <input type="number" id="pref-timer" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:border-aured focus:outline-none focus:ring-1 focus:ring-aured transition-colors" placeholder="e.g. 10">
+                    </div>
+                    <button onclick="saveSettings()" class="w-full py-3 bg-gray-900 text-white font-bold rounded-xl mt-2 active:bg-black transition-colors">
+                        Save Preferences
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disclaimer Modal (Must Accept before Setup) -->
+        <div id="disclaimer-modal" class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm z-[200] hidden items-center justify-center p-5 opacity-0 transition-opacity duration-300">
+            <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center transform scale-95 transition-transform duration-300" id="disclaimer-card">
+                <div class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4 text-augold text-2xl">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Important Notice</h3>
+                <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+                    Please note that this platform is <b class="text-gray-800">strictly for practice purposes</b>.<br><br>The actual exam interface, rule sets, and final test platform may vary significantly.
+                </p>
+                <button onclick="acceptDisclaimer()" class="w-full py-3.5 bg-aured text-white font-bold rounded-xl shadow-float active:bg-auredlight transition-colors">
+                    I Understand & Continue
+                </button>
+            </div>
+        </div>
+
     </div>
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
         // --- 1. CORE DATA & STORAGE ---
-        const STORAGE_KEY = 'auset_platform_v2'; 
+        const STORAGE_KEY = 'auset_platform_v4'; 
+        const PREFS_KEY = 'auset_prefs_v1';
         const TEST_DURATION_MS = 60 * 60 * 1000; // 60 mins
         
         let appState = {
             history: [], // { date, difficulty, score, total }
             activeTest: null // { questions, startTime, answers, marked, currentQ, difficulty }
         };
+
+        // User Preferences Default
+        let prefs = {
+            disableCopy: false,
+            restrictSwitch: false,
+            blockTimer: 10
+        };
         
         let timerInterval = null;
         let selectedDifficulty = null; // No auto-selection
+        let penaltyInterval = null;
 
         // --- 2. BOOTSTRAP ---
         window.addEventListener('DOMContentLoaded', () => {
             loadState();
+            loadPrefs();
+            
             if (appState.activeTest) {
-                // Resume active test
                 document.getElementById('test-diff-label').textContent = appState.activeTest.difficulty;
+                applyAntiCheat();
                 switchScreen('screen-test');
                 buildPalette();
                 renderQuestion(false);
                 startTimer();
             } else {
-                // Show dashboard
                 renderDashboard();
                 switchScreen('screen-dashboard');
             }
@@ -345,6 +434,15 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
         }
 
+        function loadPrefs() {
+            const saved = localStorage.getItem(PREFS_KEY);
+            if(saved) prefs = JSON.parse(saved);
+        }
+
+        function savePrefs() {
+            localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+        }
+
         // --- 3. UI NAVIGATION ---
         function switchScreen(screenId) {
             ['screen-dashboard', 'screen-setup', 'screen-test', 'screen-result'].forEach(id => {
@@ -353,17 +451,67 @@
             const target = document.getElementById(screenId);
             target.classList.remove('hidden');
             
-            // Add slide up animation
             target.classList.remove('slide-up');
             void target.offsetWidth; 
             target.classList.add('slide-up');
         }
 
-        // --- 4. DASHBOARD LOGIC ---
+        // --- 4. PREFERENCES / SETTINGS LOGIC ---
+        function openSettings() {
+            document.getElementById('pref-copy').checked = prefs.disableCopy;
+            document.getElementById('pref-switch').checked = prefs.restrictSwitch;
+            document.getElementById('pref-timer').value = prefs.blockTimer;
+
+            const modal = document.getElementById('settings-modal');
+            const card = document.getElementById('settings-card');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => { modal.classList.remove('opacity-0'); card.classList.remove('scale-95'); }, 10);
+        }
+
+        function closeSettings() {
+            const modal = document.getElementById('settings-modal');
+            const card = document.getElementById('settings-card');
+            modal.classList.add('opacity-0');
+            card.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
+        }
+
+        function saveSettings() {
+            prefs.disableCopy = document.getElementById('pref-copy').checked;
+            prefs.restrictSwitch = document.getElementById('pref-switch').checked;
+            prefs.blockTimer = parseInt(document.getElementById('pref-timer').value) || 10;
+            
+            savePrefs();
+            closeSettings();
+        }
+
+        // --- 5. DISCLAIMER LOGIC ---
+        function showDisclaimer() {
+            const modal = document.getElementById('disclaimer-modal');
+            const card = document.getElementById('disclaimer-card');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => { modal.classList.remove('opacity-0'); card.classList.remove('scale-95'); }, 10);
+        }
+
+        function acceptDisclaimer() {
+            const modal = document.getElementById('disclaimer-modal');
+            const card = document.getElementById('disclaimer-card');
+            modal.classList.add('opacity-0');
+            card.classList.add('scale-95');
+            setTimeout(() => { 
+                modal.classList.add('hidden'); 
+                modal.classList.remove('flex'); 
+                switchScreen('screen-setup');
+            }, 300);
+        }
+
+
+        // --- 6. DASHBOARD LOGIC ---
         function renderDashboard() {
             const history = appState.history || [];
             
-            // Stats
             document.getElementById('stat-total').textContent = history.length;
             let avg = 0;
             if (history.length > 0) {
@@ -372,7 +520,6 @@
             }
             document.getElementById('stat-avg').textContent = `${avg}%`;
 
-            // History List
             const listEl = document.getElementById('history-list');
             const emptyEl = document.getElementById('history-empty');
             
@@ -383,18 +530,15 @@
                 emptyEl.classList.add('hidden');
                 listEl.querySelectorAll('.hist-card').forEach(e => e.remove());
                 
-                // Show latest 10, reversed
                 const reversedHistory = [...history].reverse().slice(0, 10);
                 reversedHistory.forEach((test, index) => {
                     const pct = Math.round((test.score / test.total) * 100);
                     let color = pct >= 80 ? 'text-green-600 bg-green-50 border-green-200' : (pct >= 50 ? 'text-augold bg-orange-50 border-orange-200' : 'text-aured bg-red-50 border-red-200');
-                    
                     const dateStr = new Date(test.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
                     
                     const card = document.createElement('div');
                     card.className = 'hist-card bg-white p-4 rounded-xl shadow-soft border border-gray-100 flex justify-between items-center cursor-pointer hover:border-aured hover:shadow-md transition-all';
                     
-                    // Add click event to view past test
                     const actualIndex = history.length - 1 - index;
                     card.onclick = () => viewPastTest(actualIndex);
 
@@ -417,23 +561,19 @@
 
         function viewPastTest(index) {
             const record = appState.history[index];
-            if(record) {
-                renderResultsView(record);
-            }
+            if(record) renderResultsView(record);
         }
 
-        // --- 5. SETUP & PROMPT LOGIC ---
+        // --- 7. SETUP & PROMPT LOGIC ---
         function selectDifficulty(level) {
             selectedDifficulty = level;
             
-            // Reset styles
             const buttons = document.querySelectorAll('#setup-step-1 button');
             buttons.forEach(btn => {
                 btn.className = "w-full text-left p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-300 transition-colors relative overflow-hidden";
                 btn.querySelector('div.font-bold').classList.replace('text-aured', 'text-gray-900');
             });
 
-            // Set active style
             buttons.forEach(btn => {
                 if(btn.querySelector('.font-bold').textContent.trim() === level) {
                      btn.className = "w-full text-left p-4 rounded-2xl bg-white border-2 border-aured ring-4 ring-red-50 transition-colors relative overflow-hidden";
@@ -441,33 +581,31 @@
                 }
             });
 
-            // Generate Highly Detailed Encrypted Prompt
-            const prompt = `Act as an expert engineering entrance exam creator. Generate exactly 60 multiple-choice questions for the AU-SET Exam at a [ ${level.toUpperCase()} ] difficulty level.
+            // Prompt with Dynamic 8-digit Hashing Formula
+            const prompt = `Act as an expert entrance exam creator. Generate exactly 60 multiple-choice questions for the AU-SET Exam (BCA / Bachelor of Computer Science) at a [ ${level.toUpperCase()} ] difficulty level.
 
 CRITICAL INSTRUCTIONS:
-1. Composition: 20 Physics questions, 20 Chemistry questions, and 20 Mathematics questions.
+1. Composition: 15 Computer Fundamentals, 15 Logical Reasoning, 15 Mathematics, and 15 General English questions.
 2. Format: You MUST output ONLY a valid JSON array of objects inside a single markdown code block.
 3. No Conversation: Do NOT include any text outside the code block.
 4. Structure: The JSON array MUST contain exactly 60 objects matching this precise structure:
 [
   {
-    "q": "What is the SI unit of Electric Current?",
-    "options": ["Volt", "Ampere", "Ohm", "Coulomb"],
-    "ans": "Y2B"
+    "q": "Which of the following is considered the brain of the computer?",
+    "options": ["ALU", "CPU", "Memory", "Control Unit"],
+    "ans": 84729154
   }
 ]
-5. ENCRYPTED 'ans' Key: Do NOT output the raw integer index. You MUST encode the correct index (0-3) using this exact mapping:
-Index 0 -> "X9A"
-Index 1 -> "Y2B"
-Index 2 -> "Z7C"
-Index 3 -> "W4D"
-The 'ans' value MUST be one of these 4 strings exactly.
+5. DYNAMIC HASHED 'ans' Key: Do NOT output the raw integer index. You MUST generate a unique random 8-digit number for EACH question's 'ans' key. To encode the correct option (0, 1, 2, or 3), the LAST DIGIT of this 8-digit number MUST be exactly the correct index PLUS 3.
+- If correct index is 0, last digit must be 3 (e.g., 58291043)
+- If correct index is 1, last digit must be 4 (e.g., 10485724)
+- If correct index is 2, last digit must be 5 (e.g., 99283715)
+- If correct index is 3, last digit must be 6 (e.g., 47281936)
 
 Provide the JSON now.`;
             
             document.getElementById('ai-prompt-text').textContent = prompt;
             
-            // Show step 2
             const step2 = document.getElementById('setup-step-2');
             step2.classList.remove('hidden');
             setTimeout(() => step2.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
@@ -476,19 +614,14 @@ Provide the JSON now.`;
         function copyPrompt() {
             const textToCopy = document.getElementById('ai-prompt-text').textContent;
             
-            // Robust copy mechanism (works even in restricted iframes)
             const fallbackCopyTextToClipboard = (text) => {
                 const textArea = document.createElement("textarea");
                 textArea.value = text;
-                textArea.style.position = "fixed";  // Avoid scrolling to bottom
+                textArea.style.position = "fixed"; 
                 document.body.appendChild(textArea);
                 textArea.focus();
                 textArea.select();
-                try {
-                    document.execCommand('copy');
-                } catch (err) {
-                    console.error('Fallback: Oops, unable to copy', err);
-                }
+                try { document.execCommand('copy'); } catch (err) {}
                 document.body.removeChild(textArea);
             };
 
@@ -526,7 +659,6 @@ Provide the JSON now.`;
             }
 
             try {
-                // Cleanup JSON formatting
                 let cleanJson = rawInput.replace(/^```json/i, '').replace(/```$/i, '').trim();
                 if(cleanJson.startsWith('```')) cleanJson = cleanJson.replace(/^```/, '').trim();
                 
@@ -536,18 +668,18 @@ Provide the JSON now.`;
                     throw new Error("Data must be a non-empty array.");
                 }
 
-                // Decrypt mapping dictionary
-                const decodeMap = { "X9A": 0, "Y2B": 1, "Z7C": 2, "W4D": 3 };
-
-                // Validate and Decrypt Answers
+                // Dynamic Decryption Logic
                 const decryptedData = data.map((q, index) => {
                     if(!q.q || !Array.isArray(q.options) || q.options.length !== 4) {
                         throw new Error(`Invalid structure at question ${index + 1}. Must have 'q' and 4 'options'.`);
                     }
                     
-                    const decodedAns = decodeMap[q.ans];
-                    if (decodedAns === undefined) {
-                        throw new Error(`Answer encryption missing at question ${index + 1}. AI did not follow prompt instructions.`);
+                    const ansStr = q.ans.toString();
+                    const lastDigit = parseInt(ansStr.slice(-1));
+                    const decodedAns = lastDigit - 3;
+                    
+                    if (isNaN(decodedAns) || decodedAns < 0 || decodedAns > 3) {
+                        throw new Error(`Hash error at question ${index + 1}. AI did not follow the 8-digit formula correctly.`);
                     }
 
                     return { ...q, ans: decodedAns };
@@ -565,11 +697,12 @@ Provide the JSON now.`;
                 
                 saveState();
                 errorEl.classList.add('hidden');
-                document.getElementById('json-input').value = ''; // clear
+                document.getElementById('json-input').value = ''; 
                 
                 // Initialize Test UI
                 document.getElementById('test-diff-label').textContent = selectedDifficulty;
                 document.getElementById('q-total').textContent = decryptedData.length;
+                applyAntiCheat();
                 buildPalette();
                 renderQuestion(true);
                 switchScreen('screen-test');
@@ -586,7 +719,58 @@ Provide the JSON now.`;
             errorEl.classList.remove('hidden');
         }
 
-        // --- 6. TEST EXECUTION LOGIC ---
+        // --- 8. ANTI-CHEAT LOGIC ---
+        function applyAntiCheat() {
+            const mainContent = document.getElementById('main-content');
+            
+            // 1. Copy Protection
+            if (prefs.disableCopy) {
+                mainContent.classList.add('prevent-copy');
+                document.addEventListener('copy', preventCopyAction);
+            } else {
+                mainContent.classList.remove('prevent-copy');
+                document.removeEventListener('copy', preventCopyAction);
+            }
+
+            // 2. Window Switch Protection attached in global listener
+        }
+
+        function preventCopyAction(e) {
+            if(appState.activeTest && prefs.disableCopy) {
+                e.preventDefault();
+            }
+        }
+
+        // Visibility listener
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && appState.activeTest && prefs.restrictSwitch) {
+                triggerCheatBlock();
+            }
+        });
+
+        function triggerCheatBlock() {
+            const overlay = document.getElementById('cheat-block-overlay');
+            const counter = document.getElementById('cheat-block-counter');
+            let timeLeft = prefs.blockTimer;
+            
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            counter.textContent = timeLeft;
+            
+            if(penaltyInterval) clearInterval(penaltyInterval);
+            
+            penaltyInterval = setInterval(() => {
+                timeLeft--;
+                counter.textContent = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(penaltyInterval);
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                }
+            }, 1000);
+        }
+
+        // --- 9. TEST EXECUTION LOGIC ---
         function startTimer() {
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(updateTimer, 1000);
@@ -601,7 +785,7 @@ Provide the JSON now.`;
             
             if (elapsedMs >= TEST_DURATION_MS) {
                 elapsedMs = TEST_DURATION_MS;
-                processSubmission(); // Auto submit
+                processSubmission(); 
             }
 
             const leftMs = Math.max(0, TEST_DURATION_MS - elapsedMs);
@@ -656,7 +840,6 @@ Provide the JSON now.`;
                 optsContainer.appendChild(label);
             });
 
-            // Nav
             const btnPrev = document.getElementById('btn-prev');
             const btnNext = document.getElementById('btn-next');
             btnPrev.disabled = (qIndex === 0);
@@ -732,7 +915,7 @@ Provide the JSON now.`;
             }
         }
 
-        // --- 7. PALETTE LOGIC ---
+        // --- 10. PALETTE LOGIC ---
         function buildPalette() {
             const grid = document.getElementById('palette-grid');
             grid.innerHTML = '';
@@ -811,8 +994,9 @@ Provide the JSON now.`;
             }
         }
 
-        // --- 8. SUBMISSION & RESULTS ---
+        // --- 11. SUBMISSION & RESULTS ---
         function showSubmitModal() {
+            togglePalette(false); // Fix: Closes palette if test is submitted from the palette button
             const test = appState.activeTest;
             const ansCount = Object.keys(test.answers).length;
             document.getElementById('submit-modal-text').innerHTML = `You answered <b>${ansCount}</b> of <b>${test.questions.length}</b> questions.<br>Once submitted, you cannot edit answers.`;
@@ -821,10 +1005,7 @@ Provide the JSON now.`;
             const card = document.getElementById('submit-modal-card');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                card.classList.remove('scale-95');
-            }, 10);
+            setTimeout(() => { modal.classList.remove('opacity-0'); card.classList.remove('scale-95'); }, 10);
         }
 
         function hideSubmitModal() {
@@ -832,10 +1013,7 @@ Provide the JSON now.`;
             const card = document.getElementById('submit-modal-card');
             modal.classList.add('opacity-0');
             card.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }, 300);
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
         }
 
         function processSubmission() {
@@ -849,7 +1027,6 @@ Provide the JSON now.`;
                 if (test.answers[i] === q.ans) score++;
             });
 
-            // Save to history
             const resultRecord = {
                 date: Date.now(),
                 difficulty: test.difficulty,
@@ -860,8 +1037,11 @@ Provide the JSON now.`;
             };
             
             appState.history.push(resultRecord);
-            appState.activeTest = null; // Clear active test
+            appState.activeTest = null;
             saveState();
+            
+            // Remove cheat listeners if any
+            document.removeEventListener('copy', preventCopyAction);
             
             renderResultsView(resultRecord);
         }
@@ -872,7 +1052,6 @@ Provide the JSON now.`;
             document.getElementById('res-diff').textContent = record.difficulty;
             document.getElementById('score-total').textContent = record.total;
             
-            // Animate Score
             const elScore = document.getElementById('score-val');
             let current = 0;
             elScore.textContent = 0;
@@ -884,7 +1063,6 @@ Provide the JSON now.`;
                 }, 30);
             }
 
-            // Detailed Analysis
             const detailContainer = document.getElementById('result-details');
             detailContainer.innerHTML = '';
             
@@ -941,9 +1119,8 @@ Provide the JSON now.`;
             renderDashboard();
             switchScreen('screen-dashboard');
             
-            // Reset Setup Screen visually for next time
             document.getElementById('setup-step-2').classList.add('hidden');
-            selectedDifficulty = null; // Reset selection
+            selectedDifficulty = null; 
             
             const buttons = document.querySelectorAll('#setup-step-1 button');
             buttons.forEach(btn => {
