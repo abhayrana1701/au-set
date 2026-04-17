@@ -46,6 +46,10 @@
         /* Loading Spinner */
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #D92D20; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Admin Table Custom Scrollbar */
+        .admin-scroll::-webkit-scrollbar { width: 6px; height: 6px; background: #f1f5f9; }
+        .admin-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-gray-200 text-gray-900 font-sans h-[100dvh] flex flex-col items-center justify-center selection:bg-red-200">
@@ -58,7 +62,7 @@
         <!-- ========================================== -->
         <div id="screen-loading" class="absolute inset-0 z-[500] bg-white flex flex-col items-center justify-center">
             <div class="loader mb-4"></div>
-            <p class="text-gray-500 font-medium text-sm animate-pulse">Authenticating Session...</p>
+            <p class="text-gray-500 font-medium text-sm animate-pulse" id="loading-text">Authenticating Session...</p>
         </div>
 
         <div id="screen-gate" class="absolute inset-0 z-[400] bg-bgapp flex flex-col items-center justify-center p-6 hidden text-center">
@@ -70,48 +74,136 @@
             <p id="gate-error" class="text-aured text-sm font-bold bg-red-50 px-4 py-2 rounded-lg hidden"></p>
             
             <!-- Hidden Admin Trigger -->
-            <button onclick="triggerAdminLogin()" class="absolute bottom-6 text-gray-300 hover:text-gray-400 p-4 transition-colors">
+            <button onclick="triggerAdminLogin()" class="absolute bottom-6 text-gray-300 hover:text-gray-400 p-4 transition-colors focus:outline-none">
                 <i class="fas fa-user-shield text-xs"></i>
             </button>
+            <div id="admin-login-box" class="absolute bottom-16 hidden w-3/4 max-w-xs">
+                <input type="password" id="admin-pass-input" placeholder="Admin Password" class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-aured outline-none text-center mb-2 shadow-lg">
+                <button onclick="submitAdminLogin()" class="w-full bg-gray-900 text-white font-bold py-2 rounded-lg text-sm shadow-lg">Login</button>
+            </div>
         </div>
 
         <!-- ========================================== -->
         <!-- SCREEN ADMIN: ADMIN DASHBOARD              -->
         <!-- ========================================== -->
-        <div id="screen-admin" class="absolute inset-0 z-[300] bg-bgapp flex flex-col hidden overflow-hidden">
-            <header class="bg-gray-900 px-5 py-5 text-white shadow-sm shrink-0 flex justify-between items-center rounded-b-3xl">
+        <div id="screen-admin" class="absolute inset-0 z-[300] bg-bgapp flex flex-col hidden overflow-hidden sm:max-w-4xl sm:fixed sm:inset-auto sm:w-[90vw] sm:h-[90vh] sm:rounded-3xl sm:border-[8px] sm:border-gray-900 shadow-2xl z-[999] bg-gray-50">
+            <header class="bg-gray-900 px-5 py-4 text-white shadow-sm shrink-0 flex justify-between items-center">
                 <div>
-                    <h1 class="font-bold text-xl leading-tight text-white"><i class="fas fa-shield-alt text-aured mr-2"></i> Admin Panel</h1>
-                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-1">Command Center</p>
+                    <h1 class="font-bold text-xl leading-tight text-white"><i class="fas fa-shield-alt text-aured mr-2"></i> Command Center</h1>
+                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-0.5">Live Tracking & Logs</p>
                 </div>
+                <button onclick="closeAdmin()" class="text-gray-400 hover:text-white bg-gray-800 w-8 h-8 rounded-full flex items-center justify-center transition-colors"><i class="fas fa-times"></i></button>
             </header>
 
-            <div class="flex-1 overflow-y-auto p-5 pb-24">
-                <!-- Generate Link Section -->
-                <div class="bg-white rounded-3xl shadow-soft p-5 mb-6 border border-gray-100">
-                    <h2 class="font-bold text-gray-900 mb-1"><i class="fas fa-link text-aured mr-1"></i> Generate Access Link</h2>
-                    <p class="text-xs text-gray-500 mb-4">Create a unique session code for a candidate.</p>
-                    
-                    <input type="text" id="admin-gen-name" placeholder="Candidate Username" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:border-aured outline-none mb-3">
-                    <button onclick="adminGenerateLink()" class="w-full py-3 bg-aured text-white font-bold rounded-xl active:bg-red-800 transition-colors shadow-float">
-                        Generate
-                    </button>
-                    
-                    <div id="admin-link-result" class="mt-4 hidden">
-                        <div class="bg-gray-100 p-3 rounded-xl break-all text-xs font-mono text-gray-700 border border-gray-200 select-all" id="admin-gen-url"></div>
-                        <button onclick="copyAdminLink()" id="btn-admin-copy" class="w-full mt-2 py-2 bg-gray-900 text-white font-bold text-xs rounded-lg">Copy Link</button>
+            <!-- Admin Tabs -->
+            <div class="flex border-b border-gray-200 bg-white shrink-0 overflow-x-auto admin-scroll">
+                <button onclick="switchAdminTab('tab-links')" id="btn-tab-links" class="px-5 py-3 text-sm font-bold text-aured border-b-2 border-aured whitespace-nowrap"><i class="fas fa-link mr-1"></i> Invites</button>
+                <button onclick="switchAdminTab('tab-live')" id="btn-tab-live" class="px-5 py-3 text-sm font-bold text-gray-500 hover:text-gray-800 border-b-2 border-transparent whitespace-nowrap"><i class="fas fa-satellite-dish mr-1"></i> Live Sessions</button>
+                <button onclick="switchAdminTab('tab-logs')" id="btn-tab-logs" class="px-5 py-3 text-sm font-bold text-gray-500 hover:text-gray-800 border-b-2 border-transparent whitespace-nowrap"><i class="fas fa-list mr-1"></i> Activity Logs</button>
+                <button onclick="switchAdminTab('tab-tests')" id="btn-tab-tests" class="px-5 py-3 text-sm font-bold text-gray-500 hover:text-gray-800 border-b-2 border-transparent whitespace-nowrap"><i class="fas fa-check-circle mr-1"></i> Completed Tests</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-5 admin-scroll relative">
+                
+                <!-- TAB 1: GENERATE LINKS -->
+                <div id="tab-links" class="admin-tab">
+                    <div class="bg-white rounded-2xl shadow-soft p-6 mb-6 border border-gray-100 max-w-lg mx-auto">
+                        <h2 class="font-bold text-gray-900 mb-1 text-lg">Generate Access Link</h2>
+                        <p class="text-xs text-gray-500 mb-5">Create a unique, secure session code for a candidate.</p>
+                        
+                        <input type="text" id="admin-gen-name" placeholder="Candidate Full Name / ID" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:border-aured outline-none mb-3">
+                        <button onclick="adminGenerateLink()" class="w-full py-3 bg-aured text-white font-bold rounded-xl active:bg-red-800 transition-colors shadow-float">
+                            Generate Link
+                        </button>
+                        
+                        <div id="admin-link-result" class="mt-5 hidden border-t border-gray-100 pt-4">
+                            <div class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Shareable URL</div>
+                            <div class="bg-gray-100 p-3 rounded-xl break-all text-xs font-mono text-gray-800 border border-gray-200 select-all mb-3" id="admin-gen-url"></div>
+                            <button onclick="copyAdminLink()" id="btn-admin-copy" class="w-full py-3 bg-gray-900 text-white font-bold text-sm rounded-xl hover:bg-black transition-colors"><i class="far fa-copy mr-1"></i> Copy Link</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Live Tracking Section -->
-                <div class="flex justify-between items-end mb-4">
-                    <h2 class="font-bold text-gray-900"><i class="fas fa-satellite-dish text-aured mr-1"></i> Live Sessions</h2>
-                    <button onclick="adminRefreshStats()" class="text-xs font-bold text-aured bg-red-50 px-3 py-1.5 rounded-lg active:bg-red-100"><i class="fas fa-sync-alt"></i> Refresh</button>
+                <!-- TAB 2: LIVE SESSIONS -->
+                <div id="tab-live" class="admin-tab hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="font-bold text-gray-900">Active Test Sessions</h2>
+                        <button onclick="adminRefreshLive()" class="text-xs font-bold text-aured bg-red-50 px-3 py-1.5 rounded-lg active:bg-red-100"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    </div>
+                    <div id="admin-live-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="text-center text-gray-400 py-6 text-sm col-span-full">Loading live sessions...</div>
+                    </div>
                 </div>
-                
-                <div id="admin-stats-list" class="space-y-3">
-                    <!-- Session cards injected here -->
-                    <div class="text-center text-gray-400 py-6 text-sm">No active sessions tracked yet.</div>
+
+                <!-- TAB 3: ACTIVITY LOGS (TABLE) -->
+                <div id="tab-logs" class="admin-tab hidden flex flex-col h-full">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 mb-4 shrink-0">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <input type="text" id="filter-user" placeholder="Search Name/Code..." class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:border-aured outline-none" oninput="applyLogFilters()">
+                            <select id="filter-action" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:border-aured outline-none" onchange="applyLogFilters()">
+                                <option value="">All Activities</option>
+                                <option value="Dashboard Opened">Dashboard Opened</option>
+                                <option value="Test Configured">Test Configured</option>
+                                <option value="Test Started">Test Started</option>
+                                <option value="Question Answered">Question Answered</option>
+                                <option value="Window Switched">Window Switched (Cheat)</option>
+                                <option value="Test Submitted">Test Submitted</option>
+                            </select>
+                            <input type="date" id="filter-date" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:border-aured outline-none" onchange="applyLogFilters()">
+                            <button onclick="fetchAdminLogs()" class="bg-gray-900 text-white rounded-lg px-3 py-2 text-xs font-bold hover:bg-black transition-colors"><i class="fas fa-search mr-1"></i> Search Logs</button>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                        <div class="overflow-x-auto overflow-y-auto admin-scroll flex-1 p-0">
+                            <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                                <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                                    <tr>
+                                        <th class="px-4 py-3 font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Date & Time</th>
+                                        <th class="px-4 py-3 font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Candidate</th>
+                                        <th class="px-4 py-3 font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Code</th>
+                                        <th class="px-4 py-3 font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Activity Type</th>
+                                        <th class="px-4 py-3 font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Device Info</th>
+                                        <th class="px-4 py-3 font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-logs-tbody" class="divide-y divide-gray-100 text-gray-700">
+                                    <tr><td colspan="6" class="text-center py-8 text-gray-400">Loading comprehensive logs...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: COMPLETED TESTS -->
+                <div id="tab-tests" class="admin-tab hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="font-bold text-gray-900">Submitted Tests Database</h2>
+                        <button onclick="fetchAdminTests()" class="text-xs font-bold text-aured bg-red-50 px-3 py-1.5 rounded-lg active:bg-red-100"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    </div>
+                    <div id="admin-tests-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="text-center text-gray-400 py-6 text-sm col-span-full">Loading test results...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ADMIN DEEP DIVE MODAL -->
+            <div id="admin-test-modal" class="absolute inset-0 bg-white z-[400] hidden flex-col w-full h-full">
+                <header class="bg-gray-900 px-5 py-4 text-white shadow-md shrink-0 flex justify-between items-center">
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight" id="admin-modal-name">Candidate Name</h1>
+                        <p class="text-[10px] text-gray-400 font-semibold tracking-widest mt-0.5"><span id="admin-modal-diff"></span> Level Test Analysis</p>
+                    </div>
+                    <button onclick="closeAdminTestModal()" class="text-gray-400 hover:text-white bg-gray-800 w-8 h-8 rounded-full flex items-center justify-center transition-colors"><i class="fas fa-times"></i></button>
+                </header>
+                <div class="bg-gray-100 p-4 border-b border-gray-200 flex justify-between items-center shrink-0">
+                    <div class="text-3xl font-black text-aured" id="admin-modal-score">0/60</div>
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-gray-500 uppercase">Time Taken</div>
+                        <div class="font-bold text-gray-900" id="admin-modal-time">00m 00s</div>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-5 admin-scroll bg-bgapp" id="admin-modal-details">
+                    <!-- Cards injected here -->
                 </div>
             </div>
         </div>
@@ -128,19 +220,13 @@
                         <p class="text-xs text-gray-500 font-semibold uppercase tracking-widest">AI Test Platform</p>
                     </div>
                 </div>
-                <button onclick="openSettings()" class="w-10 h-10 rounded-full bg-gray-50 text-gray-500 flex justify-center items-center hover:bg-gray-100 active:bg-gray-200 transition-colors">
+                <button onclick="openSettings()" class="w-10 h-10 rounded-full bg-gray-50 text-gray-500 flex justify-center items-center hover:bg-gray-100 active:bg-gray-200 transition-colors focus:outline-none">
                     <i class="fas fa-cog"></i>
                 </button>
             </header>
 
             <div class="px-6 flex-1 flex flex-col">
-                <div class="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6 flex items-start gap-3">
-                    <i class="fas fa-user-check text-green-600 mt-1"></i>
-                    <div>
-                        <div class="text-sm font-bold text-green-900" id="welcome-username">Welcome</div>
-                        <div class="text-xs text-green-700">Your access is verified and session is active.</div>
-                    </div>
-                </div>
+                <!-- Removed Green Welcome Box per user request -->
 
                 <button onclick="showDisclaimer()" class="w-full py-4 mb-6 bg-aured text-white font-bold rounded-2xl shadow-float active:bg-auredlight transition-colors flex justify-center items-center gap-2 text-lg">
                     <i class="fas fa-play"></i> Start New Test
@@ -364,10 +450,13 @@
                     <i class="fas fa-check"></i>
                 </div>
                 <h1 class="font-bold text-2xl text-gray-900 mb-1">Test Details</h1>
-                <p class="text-sm text-gray-500 font-medium">AU-SET Computer Science Test</p>
+                <p class="text-sm text-gray-500 font-medium mb-2">AU-SET Computer Science Test</p>
+                <div class="inline-block bg-gray-100 px-3 py-1 rounded-lg text-xs font-bold text-gray-600 mt-1" id="res-time-taken">
+                    <i class="fas fa-stopwatch mr-1"></i> Time: 00m 00s
+                </div>
             </header>
             
-            <div class="flex-1 overflow-y-auto p-5 relative z-0 -mt-4 pt-10 scroll-smooth">
+            <div class="flex-1 overflow-y-auto p-5 relative z-0 -mt-6 pt-12 scroll-smooth">
                 <div class="bg-gray-900 rounded-[2rem] shadow-float p-8 mb-6 text-center relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-10 -mt-10"></div>
                     <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full -ml-8 -mb-8"></div>
@@ -402,7 +491,7 @@
             <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="settings-card">
                 <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
                     <h3 class="font-bold text-gray-900 text-lg"><i class="fas fa-sliders-h mr-2 text-gray-500"></i> Preferences</h3>
-                    <button onclick="closeSettings()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
+                    <button onclick="closeSettings()" class="text-gray-400 hover:text-gray-600 focus:outline-none"><i class="fas fa-times text-lg"></i></button>
                 </div>
                 <div class="p-5 space-y-5">
                     <div class="flex items-center justify-between">
@@ -458,15 +547,13 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDocs, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, addDoc, getDocs, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase Setup (Works with Canvas Injected Config)
-        let db, auth, appId, codesColl, sessionsColl;
+        // Firebase Setup
+        let db, auth, appId, codesColl, usersColl, logsColl, testsColl;
         let isFirebaseActive = false;
         
         const ADMIN_PASS = "AbhayAccessGranted#";
-        const STORAGE_KEY = 'auset_platform_v5'; 
-        const PREFS_KEY = 'auset_prefs_v1';
         const TEST_DURATION_MS = 60 * 60 * 1000;
         
         window.appState = { history: [], activeTest: null };
@@ -476,9 +563,7 @@
         window.selectedDifficulty = null; 
         window.penaltyInterval = null;
         window.currentUsername = "";
-        window.currentAccessCode = "";
-        window.fbSessionId = null; // Firestore doc ID for tracking
-
+        
         // Parse URL params
         const urlParams = new URLSearchParams(window.location.search);
         window.urlCode = urlParams.get('code');
@@ -500,20 +585,19 @@
                 db = getFirestore(app);
                 appId = 'auset-live-app';
                 
-                // CRITICAL: Strict paths as per instructions
                 codesColl = collection(db, 'artifacts', appId, 'public', 'data', 'auset_codes');
-                sessionsColl = collection(db, 'artifacts', appId, 'public', 'data', 'auset_sessions');
+                usersColl = collection(db, 'artifacts', appId, 'public', 'data', 'auset_users');
+                logsColl = collection(db, 'artifacts', appId, 'public', 'data', 'auset_logs');
+                testsColl = collection(db, 'artifacts', appId, 'public', 'data', 'auset_tests');
 
                 await signInAnonymously(auth);
                 isFirebaseActive = true;
                 
                 return new Promise((resolve) => {
-                    onAuthStateChanged(auth, (user) => {
-                        if (user) resolve(true);
-                    });
+                    onAuthStateChanged(auth, (user) => { if (user) resolve(true); });
                 });
             } catch(e) {
-                console.warn("Backend tracking disabled (No Firebase Config). App will run locally.", e);
+                console.warn("Backend disabled. Running locally.", e);
                 isFirebaseActive = false;
                 return false;
             }
@@ -521,190 +605,96 @@
 
         // --- APP BOOTSTRAP ---
         window.addEventListener('DOMContentLoaded', async () => {
-            loadState();
-            loadPrefs();
-            
-            // 1. Initialize Backend
             await initFirebase();
-            
             document.getElementById('screen-loading').classList.add('hidden');
 
-            // 2. Gatekeeper Check
             if (isFirebaseActive) {
                 if (!window.urlCode) {
-                    showGate();
-                    return;
+                    showGate(); return;
                 }
-                
-                // Validate code in Firestore
-                const isValid = await validateAccessCode(window.urlCode);
+                const isValid = await validateAndLoadUser(window.urlCode);
                 if (!isValid) {
-                    showGate("Invalid or expired access code.");
-                    return;
+                    showGate("Invalid or expired access code."); return;
                 }
             } else {
-                // If running on plain Github Pages without firebase setup, bypass gatekeeper for local usage.
+                // Local Fallback 
                 window.currentUsername = "Local User";
+                const saved = localStorage.getItem('local_appState');
+                if (saved) window.appState = JSON.parse(saved);
+                const sPrefs = localStorage.getItem('local_prefs');
+                if(sPrefs) window.prefs = JSON.parse(sPrefs);
             }
 
-            document.getElementById('welcome-username').textContent = `Welcome, ${window.currentUsername}`;
-
-            // 3. Routing
             if (window.appState.activeTest) {
                 document.getElementById('test-diff-label').textContent = window.appState.activeTest.difficulty;
                 applyAntiCheat();
-                switchScreen('screen-test');
+                window.switchScreen('screen-test');
                 buildPalette();
                 renderQuestion(false);
                 startTimer();
             } else {
                 renderDashboard();
-                switchScreen('screen-dashboard');
+                window.switchScreen('screen-dashboard');
             }
         });
 
-        // --- BACKEND LOGIC (ADMIN & TRACKING) ---
-        async function validateAccessCode(codeToTest) {
+        // --- BACKEND LOGIC (USER STATE & LOGS) ---
+        async function validateAndLoadUser(codeToTest) {
             try {
-                const snapshot = await getDocs(codesColl);
+                // 1. Verify Code
+                const codesSnap = await getDocs(codesColl);
                 let valid = false;
-                snapshot.forEach(doc => {
-                    if (doc.data().code === codeToTest) {
-                        valid = true;
-                        window.currentUsername = doc.data().username;
-                    }
+                codesSnap.forEach(doc => {
+                    if (doc.data().code === codeToTest) { valid = true; window.currentUsername = doc.data().username; }
                 });
                 
-                if (valid) {
-                    window.currentAccessCode = codeToTest;
-                    
-                    // Check if session already exists locally to prevent duplicates on refresh
-                    const existingFbSession = localStorage.getItem('fb_session_' + codeToTest);
-                    if (existingFbSession) {
-                        window.fbSessionId = existingFbSession;
-                    } else {
-                        // Create initial session tracking document
-                        const newDoc = await addDoc(sessionsColl, {
-                            code: codeToTest,
-                            username: window.currentUsername,
-                            device: getDeviceDetails(),
-                            openedAt: Date.now(),
-                            status: 'Dashboard Opened',
-                            score: 0, total: 0, duration: 0
-                        });
-                        window.fbSessionId = newDoc.id;
-                        localStorage.setItem('fb_session_' + codeToTest, window.fbSessionId);
-                    }
+                if (!valid) return false;
+
+                // 2. Load or Create User State
+                const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'auset_users', codeToTest);
+                const userSnap = await getDoc(userDocRef);
+                
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    window.appState = data.appState || window.appState;
+                    window.prefs = data.prefs || window.prefs;
+                } else {
+                    await setDoc(userDocRef, { appState: window.appState, prefs: window.prefs, username: window.currentUsername });
                 }
-                return valid;
-            } catch (e) {
-                console.error(e);
-                return false;
-            }
+                
+                await logActivity("Dashboard Opened");
+                return true;
+            } catch (e) { console.error(e); return false; }
         }
 
-        async function updateFirebaseTracking(updates) {
-            if (!isFirebaseActive || !window.fbSessionId) return;
-            try {
-                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'auset_sessions', window.fbSessionId);
-                await updateDoc(ref, updates);
-            } catch(e) { console.error("Tracking update failed", e); }
-        }
-
-        window.triggerAdminLogin = () => {
-            const pass = prompt("Admin Authorization Required:");
-            if (pass === "AbhayAccessGranted#") {
-                document.getElementById('screen-gate').classList.add('hidden');
-                document.getElementById('screen-admin').classList.remove('hidden');
-                adminRefreshStats();
-            } else if (pass !== null) {
-                alert("Access Denied");
+        window.saveStateToCloud = async () => {
+            if (!isFirebaseActive || !window.urlCode) {
+                localStorage.setItem('local_appState', JSON.stringify(window.appState)); return;
             }
-        };
-
-        window.adminGenerateLink = async () => {
-            if (!isFirebaseActive) return alert("Backend not connected.");
-            const name = document.getElementById('admin-gen-name').value.trim();
-            if (!name) return alert("Enter candidate username.");
-            
-            const genCode = 'AU-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-            
             try {
-                await addDoc(codesColl, { code: genCode, username: name, createdAt: Date.now() });
-                const fullUrl = window.location.origin + window.location.pathname + "?code=" + genCode;
-                
-                document.getElementById('admin-gen-url').textContent = fullUrl;
-                document.getElementById('admin-link-result').classList.remove('hidden');
-                document.getElementById('admin-gen-name').value = '';
-            } catch (e) { alert("Failed to generate link."); }
+                const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'auset_users', window.urlCode);
+                await setDoc(userDocRef, { appState: window.appState, prefs: window.prefs }, { merge: true });
+            } catch(e) { console.error(e); }
         };
 
-        window.copyAdminLink = () => {
-            const url = document.getElementById('admin-gen-url').textContent;
-            navigator.clipboard.writeText(url).then(() => {
-                const btn = document.getElementById('btn-admin-copy');
-                btn.textContent = "Copied!";
-                btn.classList.replace('bg-gray-900', 'bg-green-600');
-                setTimeout(() => {
-                    btn.textContent = "Copy Link";
-                    btn.classList.replace('bg-green-600', 'bg-gray-900');
-                }, 2000);
-            });
-        };
-
-        window.adminRefreshStats = async () => {
-            if (!isFirebaseActive) return;
-            const listEl = document.getElementById('admin-stats-list');
-            listEl.innerHTML = '<div class="text-center text-sm py-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
-            
+        window.logActivity = async (action, details = "") => {
+            if (!isFirebaseActive || !window.urlCode) return;
             try {
-                const snapshot = await getDocs(sessionsColl);
-                const sessions = [];
-                snapshot.forEach(d => sessions.push({ id: d.id, ...d.data() }));
-                
-                // Sort by open date, newest first
-                sessions.sort((a, b) => b.openedAt - a.openedAt);
-                
-                listEl.innerHTML = '';
-                if (sessions.length === 0) {
-                    listEl.innerHTML = '<div class="text-center text-gray-400 py-6 text-sm">No active sessions tracked yet.</div>';
-                    return;
-                }
-
-                sessions.forEach(s => {
-                    let statusColor = s.status.includes('Finished') ? 'text-green-600 bg-green-50 border-green-200' : 
-                                     (s.status.includes('Started') ? 'text-blue-600 bg-blue-50 border-blue-200' : 'text-gray-600 bg-gray-50 border-gray-200');
-                    
-                    let durationText = s.testStartedAt ? `${Math.floor(((s.testFinishedAt || Date.now()) - s.testStartedAt)/60000)} mins` : '--';
-                    
-                    const card = document.createElement('div');
-                    card.className = 'bg-white p-4 rounded-xl shadow-soft border border-gray-100 text-sm';
-                    card.innerHTML = `
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <span class="font-bold text-gray-900">${s.username}</span>
-                                <span class="text-[10px] text-gray-400 ml-2 font-mono">${s.code}</span>
-                            </div>
-                            <span class="px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wide ${statusColor}">${s.status}</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 mt-3 bg-gray-50 p-2 rounded-lg">
-                            <div><i class="fas fa-desktop mr-1"></i> ${s.device}</div>
-                            <div><i class="fas fa-stopwatch mr-1"></i> Time: ${durationText}</div>
-                            ${s.status.includes('Finished') ? `<div class="col-span-2 font-bold text-gray-800 mt-1 pt-1 border-t border-gray-200">Score: ${s.score} / ${s.total}</div>` : ''}
-                        </div>
-                    `;
-                    listEl.appendChild(card);
+                await addDoc(logsColl, {
+                    code: window.urlCode,
+                    username: window.currentUsername,
+                    action: action,
+                    details: details,
+                    device: getDeviceDetails(),
+                    timestamp: Date.now()
                 });
-
-            } catch(e) {
-                listEl.innerHTML = '<div class="text-center text-red-500 text-sm py-4">Failed to load stats.</div>';
-            }
+            } catch(e) { console.error(e); }
         };
 
         function getDeviceDetails() {
             const ua = navigator.userAgent;
             let device = /Mobi|Android/i.test(ua) ? 'Mobile' : 'Desktop';
-            let os = 'Unknown OS';
+            let os = 'Unknown';
             if (/Windows/i.test(ua)) os = 'Win';
             else if (/Mac OS/i.test(ua)) os = 'Mac';
             else if (/Linux/i.test(ua)) os = 'Linux';
@@ -722,27 +712,292 @@
             }
         }
 
+        // --- ADMIN BACKEND LOGIC ---
+        window.triggerAdminLogin = () => {
+            const box = document.getElementById('admin-login-box');
+            box.classList.toggle('hidden');
+        };
+
+        window.submitAdminLogin = () => {
+            const pass = document.getElementById('admin-pass-input').value;
+            if (pass === ADMIN_PASS) {
+                document.getElementById('screen-gate').classList.add('hidden');
+                document.getElementById('screen-admin').classList.remove('hidden');
+                window.switchAdminTab('tab-links');
+            } else {
+                alert("Access Denied");
+            }
+        };
+
+        window.closeAdmin = () => {
+            document.getElementById('screen-admin').classList.add('hidden');
+            document.getElementById('screen-gate').classList.remove('hidden');
+            document.getElementById('admin-login-box').classList.add('hidden');
+            document.getElementById('admin-pass-input').value = '';
+        }
+
+        window.switchAdminTab = (tabId) => {
+            ['tab-links', 'tab-live', 'tab-logs', 'tab-tests'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+                document.getElementById('btn-' + id).className = "px-5 py-3 text-sm font-bold text-gray-500 hover:text-gray-800 border-b-2 border-transparent whitespace-nowrap";
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).className = "px-5 py-3 text-sm font-bold text-aured border-b-2 border-aured whitespace-nowrap";
+            
+            if(tabId === 'tab-live') window.adminRefreshLive();
+            if(tabId === 'tab-logs') window.fetchAdminLogs();
+            if(tabId === 'tab-tests') window.fetchAdminTests();
+        };
+
+        window.adminGenerateLink = async () => {
+            if (!isFirebaseActive) return alert("Backend not connected.");
+            const name = document.getElementById('admin-gen-name').value.trim();
+            if (!name) return alert("Enter candidate username.");
+            
+            const genCode = 'AU-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            
+            try {
+                await addDoc(codesColl, { code: genCode, username: name, createdAt: Date.now() });
+                const fullUrl = window.location.origin + window.location.pathname + "?code=" + genCode;
+                document.getElementById('admin-gen-url').textContent = fullUrl;
+                document.getElementById('admin-link-result').classList.remove('hidden');
+                document.getElementById('admin-gen-name').value = '';
+            } catch (e) { alert("Failed to generate link."); }
+        };
+
+        window.copyAdminLink = () => {
+            const url = document.getElementById('admin-gen-url').textContent;
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = document.getElementById('btn-admin-copy');
+                btn.innerHTML = "<i class='fas fa-check mr-1'></i> Copied!";
+                btn.classList.replace('bg-gray-900', 'bg-green-600');
+                setTimeout(() => {
+                    btn.innerHTML = "<i class='far fa-copy mr-1'></i> Copy Link";
+                    btn.classList.replace('bg-green-600', 'bg-gray-900');
+                }, 2000);
+            });
+        };
+
+        // ADMIN: Live Sessions
+        window.adminRefreshLive = async () => {
+            if (!isFirebaseActive) return;
+            const listEl = document.getElementById('admin-live-list');
+            listEl.innerHTML = '<div class="text-center text-sm py-4 col-span-full"><i class="fas fa-spinner fa-spin"></i> Fetching Live Data...</div>';
+            try {
+                const snap = await getDocs(usersColl);
+                listEl.innerHTML = '';
+                let count = 0;
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    if(data.appState && data.appState.activeTest) {
+                        count++;
+                        const test = data.appState.activeTest;
+                        const mins = Math.floor((Date.now() - test.startTime) / 60000);
+                        const card = document.createElement('div');
+                        card.className = 'bg-white p-4 rounded-xl shadow-soft border border-gray-100 text-sm';
+                        card.innerHTML = `
+                            <div class="flex justify-between items-start mb-2">
+                                <div><span class="font-bold text-gray-900">${data.username}</span> <span class="text-[10px] text-gray-400 font-mono ml-1">${doc.id}</span></div>
+                                <span class="px-2 py-1 rounded text-[10px] font-bold border uppercase bg-blue-50 text-blue-600 border-blue-200 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Testing</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 bg-gray-50 p-2 rounded-lg">
+                                <div><i class="fas fa-layer-group mr-1"></i> ${test.difficulty}</div>
+                                <div><i class="fas fa-stopwatch mr-1"></i> Active for ${mins}m</div>
+                                <div class="col-span-2 border-t border-gray-200 mt-1 pt-1 font-semibold text-gray-700">Answered: ${Object.keys(test.answers).length} / ${test.questions.length}</div>
+                            </div>
+                        `;
+                        listEl.appendChild(card);
+                    }
+                });
+                if(count===0) listEl.innerHTML = '<div class="text-center text-gray-400 py-6 text-sm col-span-full">No candidates are currently taking a test.</div>';
+            } catch(e) { listEl.innerHTML = '<div class="text-red-500 text-sm col-span-full">Error fetching live data.</div>'; }
+        };
+
+        // ADMIN: Activity Logs Table
+        window.allAdminLogs = [];
+        window.fetchAdminLogs = async () => {
+            if (!isFirebaseActive) return;
+            const tbody = document.getElementById('admin-logs-tbody');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i> Loading all records...</td></tr>';
+            try {
+                const snap = await getDocs(logsColl);
+                window.allAdminLogs = [];
+                snap.forEach(d => window.allAdminLogs.push({id: d.id, ...d.data()}));
+                window.allAdminLogs.sort((a,b) => b.timestamp - a.timestamp);
+                window.applyLogFilters();
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-red-500">Failed to load logs.</td></tr>'; }
+        };
+
+        window.applyLogFilters = () => {
+            const qUser = document.getElementById('filter-user').value.toLowerCase();
+            const qAction = document.getElementById('filter-action').value;
+            const qDate = document.getElementById('filter-date').value;
+
+            const filtered = window.allAdminLogs.filter(log => {
+                const matchUser = log.username.toLowerCase().includes(qUser) || log.code.toLowerCase().includes(qUser);
+                const matchAction = qAction === "" || log.action === qAction;
+                let matchDate = true;
+                if(qDate) {
+                    const lDate = new Date(log.timestamp).toISOString().split('T')[0];
+                    matchDate = lDate === qDate;
+                }
+                return matchUser && matchAction && matchDate;
+            });
+
+            const tbody = document.getElementById('admin-logs-tbody');
+            tbody.innerHTML = '';
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">No records match your filters.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(log => {
+                const d = new Date(log.timestamp);
+                const dateStr = d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+                const timeStr = d.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+                
+                let actionStyle = "text-gray-700 font-semibold";
+                if(log.action.includes('Cheat') || log.action.includes('Switched')) actionStyle = "text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded";
+                else if(log.action.includes('Submitted')) actionStyle = "text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded";
+                else if(log.action.includes('Started')) actionStyle = "text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded";
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-4 py-3 border-b border-gray-100 whitespace-nowrap"><div class="font-bold">${dateStr}</div><div class="text-[10px] text-gray-400">${timeStr}</div></td>
+                    <td class="px-4 py-3 border-b border-gray-100 whitespace-nowrap font-medium">${log.username}</td>
+                    <td class="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-gray-500 font-mono text-[10px]">${log.code}</td>
+                    <td class="px-4 py-3 border-b border-gray-100 whitespace-nowrap"><span class="${actionStyle}">${log.action}</span></td>
+                    <td class="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-gray-500 text-[10px]">${log.device}</td>
+                    <td class="px-4 py-3 border-b border-gray-100 whitespace-nowrap text-gray-400 text-xs truncate max-w-[150px]" title="${log.details}">${log.details || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        // ADMIN: Completed Tests
+        window.allAdminTests = [];
+        window.fetchAdminTests = async () => {
+            if (!isFirebaseActive) return;
+            const listEl = document.getElementById('admin-tests-list');
+            listEl.innerHTML = '<div class="text-center text-sm py-4 col-span-full"><i class="fas fa-spinner fa-spin"></i> Fetching Tests...</div>';
+            try {
+                const snap = await getDocs(testsColl);
+                window.allAdminTests = [];
+                snap.forEach(d => window.allAdminTests.push({id: d.id, ...d.data()}));
+                window.allAdminTests.sort((a,b) => b.timestamp - a.timestamp);
+                
+                listEl.innerHTML = '';
+                if(window.allAdminTests.length === 0) {
+                    listEl.innerHTML = '<div class="text-center text-gray-400 py-6 text-sm col-span-full">No tests submitted yet.</div>';
+                    return;
+                }
+
+                window.allAdminTests.forEach((test, index) => {
+                    const pct = Math.round((test.score / test.total) * 100);
+                    let color = pct >= 80 ? 'text-green-600 bg-green-50 border-green-200' : (pct >= 50 ? 'text-augold bg-orange-50 border-orange-200' : 'text-aured bg-red-50 border-red-200');
+                    const d = new Date(test.timestamp);
+                    const timeTakenStr = test.timeTakenMs ? formatDuration(test.timeTakenMs) : '--';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-4 rounded-xl shadow-soft border border-gray-100 flex flex-col justify-between';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-3 border-b border-gray-100 pb-3">
+                            <div>
+                                <div class="font-bold text-gray-900">${test.username}</div>
+                                <div class="text-[10px] text-gray-400">${d.toLocaleDateString()} ${d.toLocaleTimeString()}</div>
+                            </div>
+                            <div class="px-3 py-1.5 rounded-lg font-black text-sm border ${color}">${test.score} / ${test.total}</div>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <div class="text-xs text-gray-500">
+                                <div><i class="fas fa-layer-group w-4 text-center"></i> ${test.difficulty}</div>
+                                <div><i class="fas fa-stopwatch w-4 text-center"></i> ${timeTakenStr}</div>
+                            </div>
+                            <button onclick="viewAdminTestDetail(${index})" class="text-xs bg-gray-900 text-white px-3 py-2 rounded-lg font-bold hover:bg-black transition-colors">View Details</button>
+                        </div>
+                    `;
+                    listEl.appendChild(card);
+                });
+            } catch(e) { listEl.innerHTML = '<div class="text-red-500 text-sm col-span-full">Error fetching tests.</div>'; }
+        };
+
+        function formatDuration(ms) {
+            const s = Math.floor(ms/1000);
+            return `${Math.floor(s/60)}m ${s%60}s`;
+        }
+
+        window.viewAdminTestDetail = (index) => {
+            const test = window.allAdminTests[index];
+            if(!test) return;
+            
+            document.getElementById('admin-modal-name').textContent = test.username;
+            document.getElementById('admin-modal-diff').textContent = test.difficulty;
+            document.getElementById('admin-modal-score').textContent = `${test.score}/${test.total}`;
+            document.getElementById('admin-modal-time').textContent = test.timeTakenMs ? formatDuration(test.timeTakenMs) : '--';
+            
+            const detailContainer = document.getElementById('admin-modal-details');
+            detailContainer.innerHTML = '';
+            
+            test.questions.forEach((q, i) => {
+                const userAns = test.answers[i];
+                const isAttempted = userAns !== undefined;
+                const isCorrect = userAns === q.ans;
+                
+                let themeClass = "border-gray-200 bg-white";
+                let iconHtml = `<span class="bg-gray-100 text-gray-500 px-2 py-1 rounded text-xs font-bold"><i class="fas fa-minus"></i> Omitted</span>`;
+                
+                if (isAttempted) {
+                    if (isCorrect) {
+                        themeClass = "border-green-500 bg-green-50/30";
+                        iconHtml = `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold"><i class="fas fa-check"></i> Correct</span>`;
+                    } else {
+                        themeClass = "border-red-300 bg-red-50/30";
+                        iconHtml = `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold"><i class="fas fa-times"></i> Wrong</span>`;
+                    }
+                }
+
+                const el = document.createElement('div');
+                el.className = `p-5 rounded-2xl border-l-[6px] border-t border-r border-b shadow-sm mb-4 ${themeClass}`;
+                
+                let html = `
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="font-black text-gray-900 bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center">${i + 1}</span>
+                        ${iconHtml}
+                    </div>
+                    <p class="text-gray-800 mb-4 font-medium leading-relaxed">${q.q}</p>
+                    <div class="space-y-2 text-sm">
+                `;
+
+                if (isAttempted && !isCorrect) {
+                    html += `
+                        <div class="flex items-start gap-2 p-3 rounded-xl bg-red-50 text-red-900">
+                            <i class="fas fa-times-circle mt-1 text-red-500 shrink-0"></i>
+                            <div><span class="font-bold block text-xs uppercase text-red-500 mb-0.5">User Answer</span> ${q.options[userAns]}</div>
+                        </div>`;
+                }
+                
+                html += `
+                    <div class="flex items-start gap-2 p-3 rounded-xl bg-green-50 text-green-900">
+                        <i class="fas fa-check-circle mt-1 text-green-500 shrink-0"></i>
+                        <div><span class="font-bold block text-xs uppercase text-green-600 mb-0.5">Correct Answer</span> ${q.options[q.ans]}</div>
+                    </div></div>`;
+                
+                el.innerHTML = html;
+                detailContainer.appendChild(el);
+            });
+
+            document.getElementById('admin-test-modal').classList.remove('hidden');
+            document.getElementById('admin-test-modal').classList.add('flex');
+        };
+
+        window.closeAdminTestModal = () => {
+            document.getElementById('admin-test-modal').classList.add('hidden');
+            document.getElementById('admin-test-modal').classList.remove('flex');
+        };
+
 
         // --- STANDARD APP LOGIC (Mapped to Window) ---
         
-        function loadState() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) window.appState = JSON.parse(saved);
-        }
-
-        function saveState() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(window.appState));
-        }
-
-        function loadPrefs() {
-            const saved = localStorage.getItem(PREFS_KEY);
-            if(saved) window.prefs = JSON.parse(saved);
-        }
-
-        function savePrefs() {
-            localStorage.setItem(PREFS_KEY, JSON.stringify(window.prefs));
-        }
-
         window.switchScreen = function(screenId) {
             ['screen-dashboard', 'screen-setup', 'screen-test', 'screen-result'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
@@ -778,7 +1033,7 @@
             window.prefs.disableCopy = document.getElementById('pref-copy').checked;
             window.prefs.restrictSwitch = document.getElementById('pref-switch').checked;
             window.prefs.blockTimer = parseInt(document.getElementById('pref-timer').value) || 10;
-            savePrefs();
+            saveStateToCloud();
             closeSettings();
         }
 
@@ -975,7 +1230,10 @@ Provide the JSON now.`;
                     answers: {}, marked: {}, currentQ: 0
                 };
                 
-                saveState();
+                await window.saveStateToCloud();
+                await logActivity("Test Configured", `Difficulty: ${window.selectedDifficulty}, Total Qs: ${decryptedData.length}`);
+                await logActivity("Test Started", `Timer Started`);
+
                 errorEl.classList.add('hidden');
                 document.getElementById('json-input').value = ''; 
                 
@@ -988,12 +1246,6 @@ Provide the JSON now.`;
                 window.switchScreen('screen-test');
                 startTimer();
                 
-                // Track backend
-                updateFirebaseTracking({
-                    status: 'Test Started (' + window.selectedDifficulty + ')',
-                    testStartedAt: Date.now()
-                });
-
             } catch (err) { showError("Invalid Data: " + err.message); }
         }
 
@@ -1025,6 +1277,7 @@ Provide the JSON now.`;
         });
 
         function triggerCheatBlock() {
+            logActivity("Window Switched", "Anti-cheat block triggered.");
             const overlay = document.getElementById('cheat-block-overlay');
             const counter = document.getElementById('cheat-block-counter');
             let timeLeft = window.prefs.blockTimer;
@@ -1133,7 +1386,8 @@ Provide the JSON now.`;
 
         window.selectOption = function(qIndex, optIndex) {
             window.appState.activeTest.answers[qIndex] = optIndex;
-            saveState();
+            saveStateToCloud();
+            logActivity("Question Answered", `Q${qIndex + 1} marked.`);
             renderQuestion(false);
             updatePaletteColors();
         }
@@ -1142,7 +1396,7 @@ Provide the JSON now.`;
             const test = window.appState.activeTest;
             if (test.currentQ < test.questions.length - 1) {
                 test.currentQ++;
-                saveState();
+                saveStateToCloud();
                 renderQuestion(true);
             } else {
                 window.showSubmitModal();
@@ -1152,7 +1406,7 @@ Provide the JSON now.`;
         window.navPrev = function() {
             if (window.appState.activeTest.currentQ > 0) {
                 window.appState.activeTest.currentQ--;
-                saveState();
+                saveStateToCloud();
                 renderQuestion(true);
             }
         }
@@ -1160,14 +1414,14 @@ Provide the JSON now.`;
         window.toggleMark = function() {
             const test = window.appState.activeTest;
             test.marked[test.currentQ] = !test.marked[test.currentQ];
-            saveState();
+            saveStateToCloud();
             updateMarkButton();
             updatePaletteColors();
         }
 
         window.clearSelection = function() {
             delete window.appState.activeTest.answers[window.appState.activeTest.currentQ];
-            saveState();
+            saveStateToCloud();
             renderQuestion(false);
             updatePaletteColors();
         }
@@ -1201,7 +1455,7 @@ Provide the JSON now.`;
                 btn.id = `pal-btn-${i}`;
                 btn.onclick = () => {
                     window.appState.activeTest.currentQ = i;
-                    saveState();
+                    saveStateToCloud();
                     renderQuestion(true);
                     window.togglePalette(false);
                 };
@@ -1288,13 +1542,14 @@ Provide the JSON now.`;
             setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
         }
 
-        window.processSubmission = function() {
+        window.processSubmission = async function() {
             window.hideSubmitModal();
             if(window.timerInterval) clearInterval(window.timerInterval);
             
             const test = window.appState.activeTest;
             let score = 0;
             test.questions.forEach((q, i) => { if (test.answers[i] === q.ans) score++; });
+            const timeTakenMs = Date.now() - test.startTime;
 
             const resultRecord = {
                 date: Date.now(),
@@ -1302,21 +1557,29 @@ Provide the JSON now.`;
                 score: score,
                 total: test.questions.length,
                 questions: test.questions,
-                answers: test.answers
+                answers: test.answers,
+                timeTakenMs: timeTakenMs
             };
             
             window.appState.history.push(resultRecord);
             window.appState.activeTest = null;
-            saveState();
+            await saveStateToCloud();
             
             document.removeEventListener('copy', preventCopyAction);
             
-            updateFirebaseTracking({
-                status: 'Test Finished',
-                score: score,
-                total: test.questions.length,
-                testFinishedAt: Date.now()
-            });
+            await logActivity("Test Submitted", `Score: ${score}/${test.questions.length} | Time: ${formatDuration(timeTakenMs)}`);
+            
+            // Save to dedicated Tests collection for Admin Deep Dive
+            if(isFirebaseActive) {
+                try {
+                    await addDoc(testsColl, {
+                        code: window.urlCode,
+                        username: window.currentUsername,
+                        timestamp: Date.now(),
+                        ...resultRecord
+                    });
+                } catch(e) {}
+            }
 
             window.renderResultsView(resultRecord);
         }
@@ -1326,6 +1589,7 @@ Provide the JSON now.`;
             
             document.getElementById('res-diff').textContent = record.difficulty;
             document.getElementById('score-total').textContent = record.total;
+            document.getElementById('res-time-taken').innerHTML = `<i class="fas fa-stopwatch mr-1"></i> Time Taken: ${formatDuration(record.timeTakenMs || 0)}`;
             
             const elScore = document.getElementById('score-val');
             let current = 0;
