@@ -78,7 +78,12 @@
                 <i class="fas fa-user-shield text-xs"></i>
             </button>
             <div id="admin-login-box" class="absolute bottom-16 hidden w-3/4 max-w-xs">
-                <input type="password" id="admin-pass-input" placeholder="Admin Password" class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-aured outline-none text-center mb-2 shadow-lg">
+                <div class="relative mb-2 shadow-lg rounded-lg">
+                    <input type="password" id="admin-pass-input" placeholder="Admin Password" class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-aured outline-none text-center">
+                    <button onclick="toggleAdminPassVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
+                        <i class="fas fa-eye" id="admin-pass-eye"></i>
+                    </button>
+                </div>
                 <button onclick="submitAdminLogin()" class="w-full bg-gray-900 text-white font-bold py-2 rounded-lg text-sm shadow-lg">Login</button>
             </div>
         </div>
@@ -107,7 +112,7 @@
                 
                 <!-- TAB 1: GENERATE LINKS -->
                 <div id="tab-links" class="admin-tab">
-                    <div class="bg-white rounded-2xl shadow-soft p-6 mb-6 border border-gray-100 max-w-lg mx-auto">
+                    <div class="bg-white rounded-2xl shadow-soft p-6 mb-8 border border-gray-100 max-w-lg mx-auto">
                         <h2 class="font-bold text-gray-900 mb-1 text-lg">Generate Access Link</h2>
                         <p class="text-xs text-gray-500 mb-5">Create a unique, secure session code for a candidate.</p>
                         
@@ -122,6 +127,15 @@
                             <button onclick="copyAdminLink()" id="btn-admin-copy" class="w-full py-3 bg-gray-900 text-white font-bold text-sm rounded-xl hover:bg-black transition-colors"><i class="far fa-copy mr-1"></i> Copy Link</button>
                         </div>
                     </div>
+
+                    <!-- Generated Invites List -->
+                    <div class="flex justify-between items-center mb-4 mt-6">
+                        <h2 class="font-bold text-gray-900">Generated Invites</h2>
+                        <button onclick="fetchAdminInvites()" class="text-xs font-bold text-aured bg-red-50 px-3 py-1.5 rounded-lg active:bg-red-100"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    </div>
+                    <div id="admin-invites-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="text-center text-gray-400 py-6 text-sm col-span-full">Loading invites...</div>
+                    </div>
                 </div>
 
                 <!-- TAB 2: LIVE SESSIONS -->
@@ -130,7 +144,7 @@
                         <h2 class="font-bold text-gray-900">Active Test Sessions</h2>
                         <button onclick="adminRefreshLive()" class="text-xs font-bold text-aured bg-red-50 px-3 py-1.5 rounded-lg active:bg-red-100"><i class="fas fa-sync-alt"></i> Refresh</button>
                     </div>
-                    <div id="admin-live-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div id="admin-live-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div class="text-center text-gray-400 py-6 text-sm col-span-full">Loading live sessions...</div>
                     </div>
                 </div>
@@ -139,8 +153,8 @@
                 <div id="tab-logs" class="admin-tab hidden flex flex-col h-full">
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 mb-4 shrink-0">
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <input type="text" id="filter-user" placeholder="Search Name/Code..." class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:border-aured outline-none" oninput="applyLogFilters()">
-                            <select id="filter-action" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:border-aured outline-none" onchange="applyLogFilters()">
+                            <input type="text" id="filter-user" placeholder="Search Name/Code..." class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:border-aured outline-none" oninput="applyLogFilters()">
+                            <select id="filter-action" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:border-aured outline-none" onchange="applyLogFilters()">
                                 <option value="">All Activities</option>
                                 <option value="Dashboard Opened">Dashboard Opened</option>
                                 <option value="Test Configured">Test Configured</option>
@@ -149,8 +163,8 @@
                                 <option value="Window Switched">Window Switched (Cheat)</option>
                                 <option value="Test Submitted">Test Submitted</option>
                             </select>
-                            <input type="date" id="filter-date" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:border-aured outline-none" onchange="applyLogFilters()">
-                            <button onclick="fetchAdminLogs()" class="bg-gray-900 text-white rounded-lg px-3 py-2 text-xs font-bold hover:bg-black transition-colors"><i class="fas fa-search mr-1"></i> Search Logs</button>
+                            <input type="date" id="filter-date" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:border-aured outline-none text-gray-500" onchange="applyLogFilters()">
+                            <button onclick="fetchAdminLogs()" class="w-full bg-gray-900 text-white rounded-lg px-3 py-2 text-xs font-bold hover:bg-black transition-colors"><i class="fas fa-search mr-1"></i> Search Logs</button>
                         </div>
                     </div>
                     <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
@@ -180,7 +194,7 @@
                         <h2 class="font-bold text-gray-900">Submitted Tests Database</h2>
                         <button onclick="fetchAdminTests()" class="text-xs font-bold text-aured bg-red-50 px-3 py-1.5 rounded-lg active:bg-red-100"><i class="fas fa-sync-alt"></i> Refresh</button>
                     </div>
-                    <div id="admin-tests-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div id="admin-tests-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div class="text-center text-gray-400 py-6 text-sm col-span-full">Loading test results...</div>
                     </div>
                 </div>
@@ -226,7 +240,6 @@
             </header>
 
             <div class="px-6 flex-1 flex flex-col">
-                <!-- Removed Green Welcome Box per user request -->
 
                 <button onclick="showDisclaimer()" class="w-full py-4 mb-6 bg-aured text-white font-bold rounded-2xl shadow-float active:bg-auredlight transition-colors flex justify-center items-center gap-2 text-lg">
                     <i class="fas fa-play"></i> Start New Test
@@ -547,7 +560,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, addDoc, getDocs, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, addDoc, getDocs, updateDoc, query, where, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase Setup
         let db, auth, appId, codesColl, usersColl, logsColl, testsColl;
@@ -563,6 +576,7 @@
         window.selectedDifficulty = null; 
         window.penaltyInterval = null;
         window.currentUsername = "";
+        window.appStateLoaded = false;
         
         // Parse URL params
         const urlParams = new URLSearchParams(window.location.search);
@@ -623,8 +637,12 @@
                 if (saved) window.appState = JSON.parse(saved);
                 const sPrefs = localStorage.getItem('local_prefs');
                 if(sPrefs) window.prefs = JSON.parse(sPrefs);
+                
+                initAppUI();
             }
+        });
 
+        function initAppUI() {
             if (window.appState.activeTest) {
                 document.getElementById('test-diff-label').textContent = window.appState.activeTest.difficulty;
                 applyAntiCheat();
@@ -636,35 +654,68 @@
                 renderDashboard();
                 window.switchScreen('screen-dashboard');
             }
-        });
+        }
 
         // --- BACKEND LOGIC (USER STATE & LOGS) ---
-        async function validateAndLoadUser(codeToTest) {
-            try {
-                // 1. Verify Code
-                const codesSnap = await getDocs(codesColl);
-                let valid = false;
-                codesSnap.forEach(doc => {
-                    if (doc.data().code === codeToTest) { valid = true; window.currentUsername = doc.data().username; }
-                });
-                
-                if (!valid) return false;
+        function validateAndLoadUser(codeToTest) {
+            return new Promise((resolve) => {
+                // Realtime listener to kick user if invite is deleted
+                onSnapshot(codesColl, async (snapshot) => {
+                    let found = false;
+                    let uname = "";
+                    snapshot.forEach(doc => {
+                        if (doc.data().code === codeToTest) {
+                            found = true;
+                            uname = doc.data().username;
+                        }
+                    });
 
-                // 2. Load or Create User State
-                const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'auset_users', codeToTest);
-                const userSnap = await getDoc(userDocRef);
-                
-                if (userSnap.exists()) {
-                    const data = userSnap.data();
-                    window.appState = data.appState || window.appState;
-                    window.prefs = data.prefs || window.prefs;
-                } else {
-                    await setDoc(userDocRef, { appState: window.appState, prefs: window.prefs, username: window.currentUsername });
-                }
-                
-                await logActivity("Dashboard Opened");
-                return true;
-            } catch (e) { console.error(e); return false; }
+                    if (!found) {
+                        // Invite was deleted or doesn't exist
+                        if (window.appState && window.appState.activeTest) {
+                            if(window.timerInterval) clearInterval(window.timerInterval);
+                            if(window.penaltyInterval) clearInterval(window.penaltyInterval);
+                            ['screen-test', 'screen-setup', 'screen-dashboard', 'screen-result', 'settings-modal', 'disclaimer-modal'].forEach(id => {
+                                const el = document.getElementById(id);
+                                if(el) el.classList.add('hidden');
+                            });
+                            showGate("Your access link has been revoked by the administrator.");
+                        } else if (!window.currentUsername) {
+                            resolve(false);
+                        } else {
+                            showGate("Your access link has been revoked by the administrator.");
+                        }
+                    } else {
+                        window.currentUsername = uname;
+                        
+                        // Only load appState once on initial mount
+                        if (!window.appStateLoaded) {
+                            window.appStateLoaded = true;
+                            try {
+                                const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'auset_users', codeToTest);
+                                const userSnap = await getDoc(userDocRef);
+                                
+                                if (userSnap.exists()) {
+                                    const data = userSnap.data();
+                                    window.appState = data.appState || window.appState;
+                                    window.prefs = data.prefs || window.prefs;
+                                } else {
+                                    await setDoc(userDocRef, { appState: window.appState, prefs: window.prefs, username: window.currentUsername });
+                                }
+                                await logActivity("Dashboard Opened");
+                                initAppUI();
+                                resolve(true);
+                            } catch(e) {
+                                console.error(e);
+                                resolve(false);
+                            }
+                        }
+                    }
+                }, (error) => {
+                    console.error("Snapshot error", error);
+                    resolve(false);
+                });
+            });
         }
 
         window.saveStateToCloud = async () => {
@@ -717,6 +768,18 @@
             const box = document.getElementById('admin-login-box');
             box.classList.toggle('hidden');
         };
+        
+        window.toggleAdminPassVisibility = () => {
+            const input = document.getElementById('admin-pass-input');
+            const icon = document.getElementById('admin-pass-eye');
+            if(input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        };
 
         window.submitAdminLogin = () => {
             const pass = document.getElementById('admin-pass-input').value;
@@ -734,6 +797,8 @@
             document.getElementById('screen-gate').classList.remove('hidden');
             document.getElementById('admin-login-box').classList.add('hidden');
             document.getElementById('admin-pass-input').value = '';
+            document.getElementById('admin-pass-input').type = 'password';
+            document.getElementById('admin-pass-eye').className = 'fas fa-eye';
         }
 
         window.switchAdminTab = (tabId) => {
@@ -744,6 +809,7 @@
             document.getElementById(tabId).classList.remove('hidden');
             document.getElementById('btn-' + tabId).className = "px-5 py-3 text-sm font-bold text-aured border-b-2 border-aured whitespace-nowrap";
             
+            if(tabId === 'tab-links') window.fetchAdminInvites();
             if(tabId === 'tab-live') window.adminRefreshLive();
             if(tabId === 'tab-logs') window.fetchAdminLogs();
             if(tabId === 'tab-tests') window.fetchAdminTests();
@@ -762,6 +828,7 @@
                 document.getElementById('admin-gen-url').textContent = fullUrl;
                 document.getElementById('admin-link-result').classList.remove('hidden');
                 document.getElementById('admin-gen-name').value = '';
+                window.fetchAdminInvites(); // Refresh list automatically
             } catch (e) { alert("Failed to generate link."); }
         };
 
@@ -776,6 +843,59 @@
                     btn.classList.replace('bg-green-600', 'bg-gray-900');
                 }, 2000);
             });
+        };
+        
+        window.copySpecificLink = (url) => {
+            navigator.clipboard.writeText(url).then(() => {
+                alert("Link Copied to Clipboard!");
+            });
+        };
+
+        window.fetchAdminInvites = async () => {
+            if (!isFirebaseActive) return;
+            const listEl = document.getElementById('admin-invites-list');
+            listEl.innerHTML = '<div class="text-center text-sm py-4 col-span-full"><i class="fas fa-spinner fa-spin"></i> Fetching...</div>';
+            try {
+                const snap = await getDocs(codesColl);
+                listEl.innerHTML = '';
+                let count = 0;
+                
+                const invites = [];
+                snap.forEach(doc => invites.push({id: doc.id, ...doc.data()}));
+                invites.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+                invites.forEach(data => {
+                    count++;
+                    const d = new Date(data.createdAt || Date.now());
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-4 rounded-xl shadow-soft border border-gray-100 flex flex-col justify-between relative';
+                    
+                    const fullUrl = window.location.origin + window.location.pathname + "?code=" + data.code;
+
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-2 border-b border-gray-100 pb-2">
+                            <div>
+                                <div class="font-bold text-gray-900">${data.username}</div>
+                                <div class="text-[10px] text-gray-400">${d.toLocaleDateString()}</div>
+                            </div>
+                            <button onclick="deleteAdminInvite('${data.id}')" class="text-red-500 hover:text-red-700 bg-red-50 w-8 h-8 rounded-lg flex items-center justify-center transition-colors" title="Delete Invite Forever"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                        <div class="text-xs font-mono text-gray-500 bg-gray-50 p-2 rounded truncate mb-2 select-all cursor-pointer" title="${fullUrl}">${fullUrl}</div>
+                        <button onclick="copySpecificLink('${fullUrl}')" class="w-full py-2 bg-gray-100 text-gray-700 font-bold text-xs rounded-lg hover:bg-gray-200 transition-colors"><i class="far fa-copy mr-1"></i> Copy Link</button>
+                    `;
+                    listEl.appendChild(card);
+                });
+                if(count===0) listEl.innerHTML = '<div class="text-center text-gray-400 py-6 text-sm col-span-full">No invites generated yet.</div>';
+            } catch(e) { listEl.innerHTML = '<div class="text-red-500 text-sm col-span-full">Error fetching invites.</div>'; }
+        };
+
+        window.deleteAdminInvite = async (docId) => {
+            if(confirm("Are you sure you want to delete this invite forever? The candidate will be immediately blocked from the platform.")) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'auset_codes', docId));
+                    window.fetchAdminInvites();
+                } catch(e) { alert("Failed to delete."); }
+            }
         };
 
         // ADMIN: Live Sessions
@@ -1544,6 +1664,7 @@ Provide the JSON now.`;
 
         window.processSubmission = async function() {
             window.hideSubmitModal();
+            window.togglePalette(false); // Also ensure palette is closed
             if(window.timerInterval) clearInterval(window.timerInterval);
             
             const test = window.appState.activeTest;
