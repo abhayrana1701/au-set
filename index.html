@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -43,6 +42,10 @@
         
         /* Anti-cheat selection prevent class */
         .prevent-copy { user-select: none; -webkit-user-select: none; }
+        
+        /* Loading Spinner */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #D92D20; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-gray-200 text-gray-900 font-sans h-[100dvh] flex flex-col items-center justify-center selection:bg-red-200">
@@ -50,6 +53,69 @@
     <!-- APP CONTAINER -->
     <div id="app" class="w-full h-full max-w-md w-full bg-bgapp shadow-2xl relative flex flex-col overflow-hidden sm:h-[90dvh] sm:rounded-[2.5rem] sm:border-[8px] sm:border-gray-900 relative">
         
+        <!-- ========================================== -->
+        <!-- SCREEN 0: LOADING & GATEKEEPER             -->
+        <!-- ========================================== -->
+        <div id="screen-loading" class="absolute inset-0 z-[500] bg-white flex flex-col items-center justify-center">
+            <div class="loader mb-4"></div>
+            <p class="text-gray-500 font-medium text-sm animate-pulse">Authenticating Session...</p>
+        </div>
+
+        <div id="screen-gate" class="absolute inset-0 z-[400] bg-bgapp flex flex-col items-center justify-center p-6 hidden text-center">
+            <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-aured text-3xl mb-6">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h1>
+            <p class="text-gray-500 text-sm mb-8">This assessment platform requires a valid invitation link to proceed. Please use the exact link provided to you.</p>
+            <p id="gate-error" class="text-aured text-sm font-bold bg-red-50 px-4 py-2 rounded-lg hidden"></p>
+            
+            <!-- Hidden Admin Trigger -->
+            <button onclick="triggerAdminLogin()" class="absolute bottom-6 text-gray-300 hover:text-gray-400 p-4 transition-colors">
+                <i class="fas fa-user-shield text-xs"></i>
+            </button>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SCREEN ADMIN: ADMIN DASHBOARD              -->
+        <!-- ========================================== -->
+        <div id="screen-admin" class="absolute inset-0 z-[300] bg-bgapp flex flex-col hidden overflow-hidden">
+            <header class="bg-gray-900 px-5 py-5 text-white shadow-sm shrink-0 flex justify-between items-center rounded-b-3xl">
+                <div>
+                    <h1 class="font-bold text-xl leading-tight text-white"><i class="fas fa-shield-alt text-aured mr-2"></i> Admin Panel</h1>
+                    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-1">Command Center</p>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-5 pb-24">
+                <!-- Generate Link Section -->
+                <div class="bg-white rounded-3xl shadow-soft p-5 mb-6 border border-gray-100">
+                    <h2 class="font-bold text-gray-900 mb-1"><i class="fas fa-link text-aured mr-1"></i> Generate Access Link</h2>
+                    <p class="text-xs text-gray-500 mb-4">Create a unique session code for a candidate.</p>
+                    
+                    <input type="text" id="admin-gen-name" placeholder="Candidate Username" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:border-aured outline-none mb-3">
+                    <button onclick="adminGenerateLink()" class="w-full py-3 bg-aured text-white font-bold rounded-xl active:bg-red-800 transition-colors shadow-float">
+                        Generate
+                    </button>
+                    
+                    <div id="admin-link-result" class="mt-4 hidden">
+                        <div class="bg-gray-100 p-3 rounded-xl break-all text-xs font-mono text-gray-700 border border-gray-200 select-all" id="admin-gen-url"></div>
+                        <button onclick="copyAdminLink()" id="btn-admin-copy" class="w-full mt-2 py-2 bg-gray-900 text-white font-bold text-xs rounded-lg">Copy Link</button>
+                    </div>
+                </div>
+
+                <!-- Live Tracking Section -->
+                <div class="flex justify-between items-end mb-4">
+                    <h2 class="font-bold text-gray-900"><i class="fas fa-satellite-dish text-aured mr-1"></i> Live Sessions</h2>
+                    <button onclick="adminRefreshStats()" class="text-xs font-bold text-aured bg-red-50 px-3 py-1.5 rounded-lg active:bg-red-100"><i class="fas fa-sync-alt"></i> Refresh</button>
+                </div>
+                
+                <div id="admin-stats-list" class="space-y-3">
+                    <!-- Session cards injected here -->
+                    <div class="text-center text-gray-400 py-6 text-sm">No active sessions tracked yet.</div>
+                </div>
+            </div>
+        </div>
+
         <!-- ========================================== -->
         <!-- SCREEN 1: DASHBOARD (Stats & History)      -->
         <!-- ========================================== -->
@@ -62,13 +128,20 @@
                         <p class="text-xs text-gray-500 font-semibold uppercase tracking-widest">AI Test Platform</p>
                     </div>
                 </div>
-                <!-- Preferences/Settings Button -->
                 <button onclick="openSettings()" class="w-10 h-10 rounded-full bg-gray-50 text-gray-500 flex justify-center items-center hover:bg-gray-100 active:bg-gray-200 transition-colors">
                     <i class="fas fa-cog"></i>
                 </button>
             </header>
 
             <div class="px-6 flex-1 flex flex-col">
+                <div class="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6 flex items-start gap-3">
+                    <i class="fas fa-user-check text-green-600 mt-1"></i>
+                    <div>
+                        <div class="text-sm font-bold text-green-900" id="welcome-username">Welcome</div>
+                        <div class="text-xs text-green-700">Your access is verified and session is active.</div>
+                    </div>
+                </div>
+
                 <button onclick="showDisclaimer()" class="w-full py-4 mb-6 bg-aured text-white font-bold rounded-2xl shadow-float active:bg-auredlight transition-colors flex justify-center items-center gap-2 text-lg">
                     <i class="fas fa-play"></i> Start New Test
                 </button>
@@ -87,7 +160,6 @@
 
                 <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Recent History</h2>
                 <div id="history-list" class="space-y-3 mb-6">
-                    <!-- History cards injected here -->
                     <div class="text-center text-gray-400 py-6 text-sm" id="history-empty">No tests taken yet. Start a new test to see your history here!</div>
                 </div>
             </div>
@@ -106,7 +178,6 @@
 
             <div class="flex-1 overflow-y-auto p-5 pb-24 scroll-smooth">
                 
-                <!-- Step 1: Difficulty -->
                 <div id="setup-step-1" class="fade-in">
                     <h2 class="text-xl font-bold text-gray-900 mb-2">1. Choose Difficulty</h2>
                     <p class="text-sm text-gray-500 mb-4">Select the level of Computer Science questions you want the AI to generate.</p>
@@ -139,7 +210,6 @@
                     </div>
                 </div>
 
-                <!-- Step 2: AI Prompt -->
                 <div id="setup-step-2" class="hidden fade-in mt-8 border-t border-gray-200 pt-8">
                     <h2 class="text-xl font-bold text-gray-900 mb-2">2. Generate Questions</h2>
                     <p class="text-sm text-gray-500 mb-4">Copy the strict prompt below and paste it into <b class="text-blue-600">Google Gemini</b> to generate your unique test.</p>
@@ -366,7 +436,7 @@
             </div>
         </div>
 
-        <!-- Disclaimer Modal (Must Accept before Setup) -->
+        <!-- Disclaimer Modal -->
         <div id="disclaimer-modal" class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm z-[200] hidden items-center justify-center p-5 opacity-0 transition-opacity duration-300">
             <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center transform scale-95 transition-transform duration-300" id="disclaimer-card">
                 <div class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4 text-augold text-2xl">
@@ -384,36 +454,104 @@
 
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // --- 1. CORE DATA & STORAGE ---
-        const STORAGE_KEY = 'auset_platform_v4'; 
+    <!-- FIREBASE & JAVASCRIPT LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDocs, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Setup (Works with Canvas Injected Config)
+        let db, auth, appId, codesColl, sessionsColl;
+        let isFirebaseActive = false;
+        
+        const ADMIN_PASS = "AbhayAccessGranted#";
+        const STORAGE_KEY = 'auset_platform_v5'; 
         const PREFS_KEY = 'auset_prefs_v1';
-        const TEST_DURATION_MS = 60 * 60 * 1000; // 60 mins
+        const TEST_DURATION_MS = 60 * 60 * 1000;
         
-        let appState = {
-            history: [], // { date, difficulty, score, total }
-            activeTest: null // { questions, startTime, answers, marked, currentQ, difficulty }
-        };
-
-        // User Preferences Default
-        let prefs = {
-            disableCopy: false,
-            restrictSwitch: false,
-            blockTimer: 10
-        };
+        window.appState = { history: [], activeTest: null };
+        window.prefs = { disableCopy: false, restrictSwitch: false, blockTimer: 10 };
         
-        let timerInterval = null;
-        let selectedDifficulty = null; // No auto-selection
-        let penaltyInterval = null;
+        window.timerInterval = null;
+        window.selectedDifficulty = null; 
+        window.penaltyInterval = null;
+        window.currentUsername = "";
+        window.currentAccessCode = "";
+        window.fbSessionId = null; // Firestore doc ID for tracking
 
-        // --- 2. BOOTSTRAP ---
-        window.addEventListener('DOMContentLoaded', () => {
+        // Parse URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        window.urlCode = urlParams.get('code');
+
+        // --- FIREBASE INITIALIZATION ---
+        async function initFirebase() {
+            try {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyAFQvJkZCIeD2os9LhCpojfnmpE18KwmUo",
+                    authDomain: "auset-platform.firebaseapp.com",
+                    projectId: "auset-platform",
+                    storageBucket: "auset-platform.firebasestorage.app",
+                    messagingSenderId: "437747418275",
+                    appId: "1:437747418275:web:5274776c16a80f2e48ab16"
+                };
+                
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                appId = 'auset-live-app';
+                
+                // CRITICAL: Strict paths as per instructions
+                codesColl = collection(db, 'artifacts', appId, 'public', 'data', 'auset_codes');
+                sessionsColl = collection(db, 'artifacts', appId, 'public', 'data', 'auset_sessions');
+
+                await signInAnonymously(auth);
+                isFirebaseActive = true;
+                
+                return new Promise((resolve) => {
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) resolve(true);
+                    });
+                });
+            } catch(e) {
+                console.warn("Backend tracking disabled (No Firebase Config). App will run locally.", e);
+                isFirebaseActive = false;
+                return false;
+            }
+        }
+
+        // --- APP BOOTSTRAP ---
+        window.addEventListener('DOMContentLoaded', async () => {
             loadState();
             loadPrefs();
             
-            if (appState.activeTest) {
-                document.getElementById('test-diff-label').textContent = appState.activeTest.difficulty;
+            // 1. Initialize Backend
+            await initFirebase();
+            
+            document.getElementById('screen-loading').classList.add('hidden');
+
+            // 2. Gatekeeper Check
+            if (isFirebaseActive) {
+                if (!window.urlCode) {
+                    showGate();
+                    return;
+                }
+                
+                // Validate code in Firestore
+                const isValid = await validateAccessCode(window.urlCode);
+                if (!isValid) {
+                    showGate("Invalid or expired access code.");
+                    return;
+                }
+            } else {
+                // If running on plain Github Pages without firebase setup, bypass gatekeeper for local usage.
+                window.currentUsername = "Local User";
+            }
+
+            document.getElementById('welcome-username').textContent = `Welcome, ${window.currentUsername}`;
+
+            // 3. Routing
+            if (window.appState.activeTest) {
+                document.getElementById('test-diff-label').textContent = window.appState.activeTest.difficulty;
                 applyAntiCheat();
                 switchScreen('screen-test');
                 buildPalette();
@@ -425,42 +563,201 @@
             }
         });
 
+        // --- BACKEND LOGIC (ADMIN & TRACKING) ---
+        async function validateAccessCode(codeToTest) {
+            try {
+                const snapshot = await getDocs(codesColl);
+                let valid = false;
+                snapshot.forEach(doc => {
+                    if (doc.data().code === codeToTest) {
+                        valid = true;
+                        window.currentUsername = doc.data().username;
+                    }
+                });
+                
+                if (valid) {
+                    window.currentAccessCode = codeToTest;
+                    
+                    // Check if session already exists locally to prevent duplicates on refresh
+                    const existingFbSession = localStorage.getItem('fb_session_' + codeToTest);
+                    if (existingFbSession) {
+                        window.fbSessionId = existingFbSession;
+                    } else {
+                        // Create initial session tracking document
+                        const newDoc = await addDoc(sessionsColl, {
+                            code: codeToTest,
+                            username: window.currentUsername,
+                            device: getDeviceDetails(),
+                            openedAt: Date.now(),
+                            status: 'Dashboard Opened',
+                            score: 0, total: 0, duration: 0
+                        });
+                        window.fbSessionId = newDoc.id;
+                        localStorage.setItem('fb_session_' + codeToTest, window.fbSessionId);
+                    }
+                }
+                return valid;
+            } catch (e) {
+                console.error(e);
+                return false;
+            }
+        }
+
+        async function updateFirebaseTracking(updates) {
+            if (!isFirebaseActive || !window.fbSessionId) return;
+            try {
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'auset_sessions', window.fbSessionId);
+                await updateDoc(ref, updates);
+            } catch(e) { console.error("Tracking update failed", e); }
+        }
+
+        window.triggerAdminLogin = () => {
+            const pass = prompt("Admin Authorization Required:");
+            if (pass === "AbhayAccessGranted#") {
+                document.getElementById('screen-gate').classList.add('hidden');
+                document.getElementById('screen-admin').classList.remove('hidden');
+                adminRefreshStats();
+            } else if (pass !== null) {
+                alert("Access Denied");
+            }
+        };
+
+        window.adminGenerateLink = async () => {
+            if (!isFirebaseActive) return alert("Backend not connected.");
+            const name = document.getElementById('admin-gen-name').value.trim();
+            if (!name) return alert("Enter candidate username.");
+            
+            const genCode = 'AU-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            
+            try {
+                await addDoc(codesColl, { code: genCode, username: name, createdAt: Date.now() });
+                const fullUrl = window.location.origin + window.location.pathname + "?code=" + genCode;
+                
+                document.getElementById('admin-gen-url').textContent = fullUrl;
+                document.getElementById('admin-link-result').classList.remove('hidden');
+                document.getElementById('admin-gen-name').value = '';
+            } catch (e) { alert("Failed to generate link."); }
+        };
+
+        window.copyAdminLink = () => {
+            const url = document.getElementById('admin-gen-url').textContent;
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = document.getElementById('btn-admin-copy');
+                btn.textContent = "Copied!";
+                btn.classList.replace('bg-gray-900', 'bg-green-600');
+                setTimeout(() => {
+                    btn.textContent = "Copy Link";
+                    btn.classList.replace('bg-green-600', 'bg-gray-900');
+                }, 2000);
+            });
+        };
+
+        window.adminRefreshStats = async () => {
+            if (!isFirebaseActive) return;
+            const listEl = document.getElementById('admin-stats-list');
+            listEl.innerHTML = '<div class="text-center text-sm py-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+            
+            try {
+                const snapshot = await getDocs(sessionsColl);
+                const sessions = [];
+                snapshot.forEach(d => sessions.push({ id: d.id, ...d.data() }));
+                
+                // Sort by open date, newest first
+                sessions.sort((a, b) => b.openedAt - a.openedAt);
+                
+                listEl.innerHTML = '';
+                if (sessions.length === 0) {
+                    listEl.innerHTML = '<div class="text-center text-gray-400 py-6 text-sm">No active sessions tracked yet.</div>';
+                    return;
+                }
+
+                sessions.forEach(s => {
+                    let statusColor = s.status.includes('Finished') ? 'text-green-600 bg-green-50 border-green-200' : 
+                                     (s.status.includes('Started') ? 'text-blue-600 bg-blue-50 border-blue-200' : 'text-gray-600 bg-gray-50 border-gray-200');
+                    
+                    let durationText = s.testStartedAt ? `${Math.floor(((s.testFinishedAt || Date.now()) - s.testStartedAt)/60000)} mins` : '--';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-4 rounded-xl shadow-soft border border-gray-100 text-sm';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="font-bold text-gray-900">${s.username}</span>
+                                <span class="text-[10px] text-gray-400 ml-2 font-mono">${s.code}</span>
+                            </div>
+                            <span class="px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wide ${statusColor}">${s.status}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 mt-3 bg-gray-50 p-2 rounded-lg">
+                            <div><i class="fas fa-desktop mr-1"></i> ${s.device}</div>
+                            <div><i class="fas fa-stopwatch mr-1"></i> Time: ${durationText}</div>
+                            ${s.status.includes('Finished') ? `<div class="col-span-2 font-bold text-gray-800 mt-1 pt-1 border-t border-gray-200">Score: ${s.score} / ${s.total}</div>` : ''}
+                        </div>
+                    `;
+                    listEl.appendChild(card);
+                });
+
+            } catch(e) {
+                listEl.innerHTML = '<div class="text-center text-red-500 text-sm py-4">Failed to load stats.</div>';
+            }
+        };
+
+        function getDeviceDetails() {
+            const ua = navigator.userAgent;
+            let device = /Mobi|Android/i.test(ua) ? 'Mobile' : 'Desktop';
+            let os = 'Unknown OS';
+            if (/Windows/i.test(ua)) os = 'Win';
+            else if (/Mac OS/i.test(ua)) os = 'Mac';
+            else if (/Linux/i.test(ua)) os = 'Linux';
+            else if (/Android/i.test(ua)) os = 'Android';
+            else if (/iOS|iPhone|iPad/i.test(ua)) os = 'iOS';
+            return `${device} (${os})`;
+        }
+
+        function showGate(msg) {
+            document.getElementById('screen-gate').classList.remove('hidden');
+            if (msg) {
+                const el = document.getElementById('gate-error');
+                el.textContent = msg;
+                el.classList.remove('hidden');
+            }
+        }
+
+
+        // --- STANDARD APP LOGIC (Mapped to Window) ---
+        
         function loadState() {
             const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) appState = JSON.parse(saved);
+            if (saved) window.appState = JSON.parse(saved);
         }
 
         function saveState() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(window.appState));
         }
 
         function loadPrefs() {
             const saved = localStorage.getItem(PREFS_KEY);
-            if(saved) prefs = JSON.parse(saved);
+            if(saved) window.prefs = JSON.parse(saved);
         }
 
         function savePrefs() {
-            localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+            localStorage.setItem(PREFS_KEY, JSON.stringify(window.prefs));
         }
 
-        // --- 3. UI NAVIGATION ---
-        function switchScreen(screenId) {
+        window.switchScreen = function(screenId) {
             ['screen-dashboard', 'screen-setup', 'screen-test', 'screen-result'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
             });
             const target = document.getElementById(screenId);
             target.classList.remove('hidden');
-            
             target.classList.remove('slide-up');
             void target.offsetWidth; 
             target.classList.add('slide-up');
         }
 
-        // --- 4. PREFERENCES / SETTINGS LOGIC ---
-        function openSettings() {
-            document.getElementById('pref-copy').checked = prefs.disableCopy;
-            document.getElementById('pref-switch').checked = prefs.restrictSwitch;
-            document.getElementById('pref-timer').value = prefs.blockTimer;
+        window.openSettings = function() {
+            document.getElementById('pref-copy').checked = window.prefs.disableCopy;
+            document.getElementById('pref-switch').checked = window.prefs.restrictSwitch;
+            document.getElementById('pref-timer').value = window.prefs.blockTimer;
 
             const modal = document.getElementById('settings-modal');
             const card = document.getElementById('settings-card');
@@ -469,7 +766,7 @@
             setTimeout(() => { modal.classList.remove('opacity-0'); card.classList.remove('scale-95'); }, 10);
         }
 
-        function closeSettings() {
+        window.closeSettings = function() {
             const modal = document.getElementById('settings-modal');
             const card = document.getElementById('settings-card');
             modal.classList.add('opacity-0');
@@ -477,17 +774,15 @@
             setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
         }
 
-        function saveSettings() {
-            prefs.disableCopy = document.getElementById('pref-copy').checked;
-            prefs.restrictSwitch = document.getElementById('pref-switch').checked;
-            prefs.blockTimer = parseInt(document.getElementById('pref-timer').value) || 10;
-            
+        window.saveSettings = function() {
+            window.prefs.disableCopy = document.getElementById('pref-copy').checked;
+            window.prefs.restrictSwitch = document.getElementById('pref-switch').checked;
+            window.prefs.blockTimer = parseInt(document.getElementById('pref-timer').value) || 10;
             savePrefs();
             closeSettings();
         }
 
-        // --- 5. DISCLAIMER LOGIC ---
-        function showDisclaimer() {
+        window.showDisclaimer = function() {
             const modal = document.getElementById('disclaimer-modal');
             const card = document.getElementById('disclaimer-card');
             modal.classList.remove('hidden');
@@ -495,7 +790,7 @@
             setTimeout(() => { modal.classList.remove('opacity-0'); card.classList.remove('scale-95'); }, 10);
         }
 
-        function acceptDisclaimer() {
+        window.acceptDisclaimer = function() {
             const modal = document.getElementById('disclaimer-modal');
             const card = document.getElementById('disclaimer-card');
             modal.classList.add('opacity-0');
@@ -503,14 +798,12 @@
             setTimeout(() => { 
                 modal.classList.add('hidden'); 
                 modal.classList.remove('flex'); 
-                switchScreen('screen-setup');
+                window.switchScreen('screen-setup');
             }, 300);
         }
 
-
-        // --- 6. DASHBOARD LOGIC ---
         function renderDashboard() {
-            const history = appState.history || [];
+            const history = window.appState.history || [];
             
             document.getElementById('stat-total').textContent = history.length;
             let avg = 0;
@@ -540,7 +833,7 @@
                     card.className = 'hist-card bg-white p-4 rounded-xl shadow-soft border border-gray-100 flex justify-between items-center cursor-pointer hover:border-aured hover:shadow-md transition-all';
                     
                     const actualIndex = history.length - 1 - index;
-                    card.onclick = () => viewPastTest(actualIndex);
+                    card.onclick = () => window.viewPastTest(actualIndex);
 
                     card.innerHTML = `
                         <div>
@@ -559,14 +852,13 @@
             }
         }
 
-        function viewPastTest(index) {
-            const record = appState.history[index];
-            if(record) renderResultsView(record);
+        window.viewPastTest = function(index) {
+            const record = window.appState.history[index];
+            if(record) window.renderResultsView(record);
         }
 
-        // --- 7. SETUP & PROMPT LOGIC ---
-        function selectDifficulty(level) {
-            selectedDifficulty = level;
+        window.selectDifficulty = function(level) {
+            window.selectedDifficulty = level;
             
             const buttons = document.querySelectorAll('#setup-step-1 button');
             buttons.forEach(btn => {
@@ -581,7 +873,6 @@
                 }
             });
 
-            // Prompt with Dynamic 8-digit Hashing Formula
             const prompt = `Act as an expert entrance exam creator. Generate exactly 60 multiple-choice questions for the AU-SET Exam (BCA / Bachelor of Computer Science) at a [ ${level.toUpperCase()} ] difficulty level.
 
 CRITICAL INSTRUCTIONS:
@@ -611,7 +902,7 @@ Provide the JSON now.`;
             setTimeout(() => step2.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
         }
 
-        function copyPrompt() {
+        window.copyPrompt = function() {
             const textToCopy = document.getElementById('ai-prompt-text').textContent;
             
             const fallbackCopyTextToClipboard = (text) => {
@@ -627,19 +918,19 @@ Provide the JSON now.`;
 
             if (!navigator.clipboard) {
                 fallbackCopyTextToClipboard(textToCopy);
-                showCopySuccess();
+                window.showCopySuccess();
                 return;
             }
             
             navigator.clipboard.writeText(textToCopy).then(() => {
-                showCopySuccess();
+                window.showCopySuccess();
             }).catch(err => {
                 fallbackCopyTextToClipboard(textToCopy);
-                showCopySuccess();
+                window.showCopySuccess();
             });
         }
 
-        function showCopySuccess() {
+        window.showCopySuccess = function() {
             const btn = document.getElementById('btn-copy');
             btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
             btn.classList.replace('bg-white/20', 'bg-green-500');
@@ -649,14 +940,11 @@ Provide the JSON now.`;
             }, 2000);
         }
 
-        function validateAndStart() {
+        window.validateAndStart = async function() {
             const rawInput = document.getElementById('json-input').value.trim();
             const errorEl = document.getElementById('json-error');
             
-            if(!rawInput) {
-                showError("Please paste the JSON from Gemini.");
-                return;
-            }
+            if(!rawInput) return showError("Please paste the JSON from Gemini.");
 
             try {
                 let cleanJson = rawInput.replace(/^```json/i, '').replace(/```$/i, '').trim();
@@ -664,53 +952,49 @@ Provide the JSON now.`;
                 
                 const data = JSON.parse(cleanJson);
                 
-                if(!Array.isArray(data) || data.length === 0) {
-                    throw new Error("Data must be a non-empty array.");
-                }
+                if(!Array.isArray(data) || data.length === 0) throw new Error("Data must be a non-empty array.");
 
-                // Dynamic Decryption Logic
                 const decryptedData = data.map((q, index) => {
                     if(!q.q || !Array.isArray(q.options) || q.options.length !== 4) {
                         throw new Error(`Invalid structure at question ${index + 1}. Must have 'q' and 4 'options'.`);
                     }
-                    
                     const ansStr = q.ans.toString();
                     const lastDigit = parseInt(ansStr.slice(-1));
                     const decodedAns = lastDigit - 3;
                     
                     if (isNaN(decodedAns) || decodedAns < 0 || decodedAns > 3) {
-                        throw new Error(`Hash error at question ${index + 1}. AI did not follow the 8-digit formula correctly.`);
+                        throw new Error(`Hash error at Q${index + 1}. AI did not follow the 8-digit formula.`);
                     }
-
                     return { ...q, ans: decodedAns };
                 });
 
-                // Setup active test
-                appState.activeTest = {
-                    difficulty: selectedDifficulty,
+                window.appState.activeTest = {
+                    difficulty: window.selectedDifficulty,
                     questions: decryptedData,
                     startTime: Date.now(),
-                    answers: {},
-                    marked: {},
-                    currentQ: 0
+                    answers: {}, marked: {}, currentQ: 0
                 };
                 
                 saveState();
                 errorEl.classList.add('hidden');
                 document.getElementById('json-input').value = ''; 
                 
-                // Initialize Test UI
-                document.getElementById('test-diff-label').textContent = selectedDifficulty;
+                document.getElementById('test-diff-label').textContent = window.selectedDifficulty;
                 document.getElementById('q-total').textContent = decryptedData.length;
+                
                 applyAntiCheat();
                 buildPalette();
                 renderQuestion(true);
-                switchScreen('screen-test');
+                window.switchScreen('screen-test');
                 startTimer();
+                
+                // Track backend
+                updateFirebaseTracking({
+                    status: 'Test Started (' + window.selectedDifficulty + ')',
+                    testStartedAt: Date.now()
+                });
 
-            } catch (err) {
-                showError("Invalid Data: " + err.message);
-            }
+            } catch (err) { showError("Invalid Data: " + err.message); }
         }
 
         function showError(msg) {
@@ -719,31 +1003,23 @@ Provide the JSON now.`;
             errorEl.classList.remove('hidden');
         }
 
-        // --- 8. ANTI-CHEAT LOGIC ---
         function applyAntiCheat() {
             const mainContent = document.getElementById('main-content');
-            
-            // 1. Copy Protection
-            if (prefs.disableCopy) {
+            if (window.prefs.disableCopy) {
                 mainContent.classList.add('prevent-copy');
                 document.addEventListener('copy', preventCopyAction);
             } else {
                 mainContent.classList.remove('prevent-copy');
                 document.removeEventListener('copy', preventCopyAction);
             }
-
-            // 2. Window Switch Protection attached in global listener
         }
 
         function preventCopyAction(e) {
-            if(appState.activeTest && prefs.disableCopy) {
-                e.preventDefault();
-            }
+            if(window.appState.activeTest && window.prefs.disableCopy) e.preventDefault();
         }
 
-        // Visibility listener
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && appState.activeTest && prefs.restrictSwitch) {
+            if (document.hidden && window.appState.activeTest && window.prefs.restrictSwitch) {
                 triggerCheatBlock();
             }
         });
@@ -751,41 +1027,39 @@ Provide the JSON now.`;
         function triggerCheatBlock() {
             const overlay = document.getElementById('cheat-block-overlay');
             const counter = document.getElementById('cheat-block-counter');
-            let timeLeft = prefs.blockTimer;
+            let timeLeft = window.prefs.blockTimer;
             
             overlay.classList.remove('hidden');
             overlay.classList.add('flex');
             counter.textContent = timeLeft;
             
-            if(penaltyInterval) clearInterval(penaltyInterval);
+            if(window.penaltyInterval) clearInterval(window.penaltyInterval);
             
-            penaltyInterval = setInterval(() => {
+            window.penaltyInterval = setInterval(() => {
                 timeLeft--;
                 counter.textContent = timeLeft;
                 if(timeLeft <= 0) {
-                    clearInterval(penaltyInterval);
+                    clearInterval(window.penaltyInterval);
                     overlay.classList.add('hidden');
                     overlay.classList.remove('flex');
                 }
             }, 1000);
         }
 
-        // --- 9. TEST EXECUTION LOGIC ---
         function startTimer() {
-            if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(updateTimer, 1000);
+            if(window.timerInterval) clearInterval(window.timerInterval);
+            window.timerInterval = setInterval(updateTimer, 1000);
             updateTimer(); 
         }
 
         function updateTimer() {
-            if(!appState.activeTest) return;
-            
+            if(!window.appState.activeTest) return;
             const now = Date.now();
-            let elapsedMs = now - appState.activeTest.startTime;
+            let elapsedMs = now - window.appState.activeTest.startTime;
             
             if (elapsedMs >= TEST_DURATION_MS) {
                 elapsedMs = TEST_DURATION_MS;
-                processSubmission(); 
+                window.processSubmission(); 
             }
 
             const leftMs = Math.max(0, TEST_DURATION_MS - elapsedMs);
@@ -808,7 +1082,7 @@ Provide the JSON now.`;
         }
 
         function renderQuestion(animate = true) {
-            const test = appState.activeTest;
+            const test = window.appState.activeTest;
             const qIndex = test.currentQ;
             const qData = test.questions[qIndex];
             const qCard = document.getElementById('q-card');
@@ -836,7 +1110,7 @@ Provide the JSON now.`;
                     </div>
                     <span class="text-gray-700 leading-snug ${isSelected ? 'font-semibold text-gray-900' : ''}">${optText}</span>
                 `;
-                label.querySelector('input').addEventListener('change', () => selectOption(qIndex, optIndex));
+                label.querySelector('input').addEventListener('change', () => window.selectOption(qIndex, optIndex));
                 optsContainer.appendChild(label);
             });
 
@@ -857,49 +1131,49 @@ Provide the JSON now.`;
             updatePaletteCurrent();
         }
 
-        function selectOption(qIndex, optIndex) {
-            appState.activeTest.answers[qIndex] = optIndex;
+        window.selectOption = function(qIndex, optIndex) {
+            window.appState.activeTest.answers[qIndex] = optIndex;
             saveState();
             renderQuestion(false);
             updatePaletteColors();
         }
 
-        function navNext() {
-            const test = appState.activeTest;
+        window.navNext = function() {
+            const test = window.appState.activeTest;
             if (test.currentQ < test.questions.length - 1) {
                 test.currentQ++;
                 saveState();
                 renderQuestion(true);
             } else {
-                showSubmitModal();
+                window.showSubmitModal();
             }
         }
 
-        function navPrev() {
-            if (appState.activeTest.currentQ > 0) {
-                appState.activeTest.currentQ--;
+        window.navPrev = function() {
+            if (window.appState.activeTest.currentQ > 0) {
+                window.appState.activeTest.currentQ--;
                 saveState();
                 renderQuestion(true);
             }
         }
 
-        function toggleMark() {
-            const test = appState.activeTest;
+        window.toggleMark = function() {
+            const test = window.appState.activeTest;
             test.marked[test.currentQ] = !test.marked[test.currentQ];
             saveState();
             updateMarkButton();
             updatePaletteColors();
         }
 
-        function clearSelection() {
-            delete appState.activeTest.answers[appState.activeTest.currentQ];
+        window.clearSelection = function() {
+            delete window.appState.activeTest.answers[window.appState.activeTest.currentQ];
             saveState();
             renderQuestion(false);
             updatePaletteColors();
         }
 
         function updateMarkButton() {
-            const isMarked = appState.activeTest.marked[appState.activeTest.currentQ];
+            const isMarked = window.appState.activeTest.marked[window.appState.activeTest.currentQ];
             const btn = document.getElementById('btn-mark');
             const icon = document.getElementById('mark-icon');
             
@@ -915,11 +1189,10 @@ Provide the JSON now.`;
             }
         }
 
-        // --- 10. PALETTE LOGIC ---
         function buildPalette() {
             const grid = document.getElementById('palette-grid');
             grid.innerHTML = '';
-            const len = appState.activeTest.questions.length;
+            const len = window.appState.activeTest.questions.length;
             
             for (let i = 0; i < len; i++) {
                 const btn = document.createElement('button');
@@ -927,10 +1200,10 @@ Provide the JSON now.`;
                 btn.textContent = i + 1;
                 btn.id = `pal-btn-${i}`;
                 btn.onclick = () => {
-                    appState.activeTest.currentQ = i;
+                    window.appState.activeTest.currentQ = i;
                     saveState();
                     renderQuestion(true);
-                    togglePalette(false);
+                    window.togglePalette(false);
                 };
                 grid.appendChild(btn);
             }
@@ -938,7 +1211,7 @@ Provide the JSON now.`;
         }
 
         function updatePaletteColors() {
-            const test = appState.activeTest;
+            const test = window.appState.activeTest;
             let ansCount = 0, markCount = 0;
             
             for (let i = 0; i < test.questions.length; i++) {
@@ -969,7 +1242,7 @@ Provide the JSON now.`;
         }
 
         function updatePaletteCurrent() {
-            const test = appState.activeTest;
+            const test = window.appState.activeTest;
             for (let i = 0; i < test.questions.length; i++) {
                 const btn = document.getElementById(`pal-btn-${i}`);
                 if (btn) btn.classList.remove('ring-4', 'ring-red-200', 'scale-[1.05]');
@@ -978,7 +1251,7 @@ Provide the JSON now.`;
             if (currBtn) currBtn.classList.add('ring-4', 'ring-red-200', 'scale-[1.05]');
         }
 
-        function togglePalette(show) {
+        window.togglePalette = function(show) {
             const overlay = document.getElementById('palette-overlay');
             const drawer = document.getElementById('palette-drawer');
             if (show) {
@@ -994,10 +1267,9 @@ Provide the JSON now.`;
             }
         }
 
-        // --- 11. SUBMISSION & RESULTS ---
-        function showSubmitModal() {
-            togglePalette(false); // Fix: Closes palette if test is submitted from the palette button
-            const test = appState.activeTest;
+        window.showSubmitModal = function() {
+            window.togglePalette(false); 
+            const test = window.appState.activeTest;
             const ansCount = Object.keys(test.answers).length;
             document.getElementById('submit-modal-text').innerHTML = `You answered <b>${ansCount}</b> of <b>${test.questions.length}</b> questions.<br>Once submitted, you cannot edit answers.`;
             
@@ -1008,7 +1280,7 @@ Provide the JSON now.`;
             setTimeout(() => { modal.classList.remove('opacity-0'); card.classList.remove('scale-95'); }, 10);
         }
 
-        function hideSubmitModal() {
+        window.hideSubmitModal = function() {
             const modal = document.getElementById('submit-modal');
             const card = document.getElementById('submit-modal-card');
             modal.classList.add('opacity-0');
@@ -1016,16 +1288,13 @@ Provide the JSON now.`;
             setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
         }
 
-        function processSubmission() {
-            hideSubmitModal();
-            if(timerInterval) clearInterval(timerInterval);
+        window.processSubmission = function() {
+            window.hideSubmitModal();
+            if(window.timerInterval) clearInterval(window.timerInterval);
             
-            const test = appState.activeTest;
+            const test = window.appState.activeTest;
             let score = 0;
-            
-            test.questions.forEach((q, i) => {
-                if (test.answers[i] === q.ans) score++;
-            });
+            test.questions.forEach((q, i) => { if (test.answers[i] === q.ans) score++; });
 
             const resultRecord = {
                 date: Date.now(),
@@ -1036,18 +1305,24 @@ Provide the JSON now.`;
                 answers: test.answers
             };
             
-            appState.history.push(resultRecord);
-            appState.activeTest = null;
+            window.appState.history.push(resultRecord);
+            window.appState.activeTest = null;
             saveState();
             
-            // Remove cheat listeners if any
             document.removeEventListener('copy', preventCopyAction);
             
-            renderResultsView(resultRecord);
+            updateFirebaseTracking({
+                status: 'Test Finished',
+                score: score,
+                total: test.questions.length,
+                testFinishedAt: Date.now()
+            });
+
+            window.renderResultsView(resultRecord);
         }
 
-        function renderResultsView(record) {
-            switchScreen('screen-result');
+        window.renderResultsView = function(record) {
+            window.switchScreen('screen-result');
             
             document.getElementById('res-diff').textContent = record.difficulty;
             document.getElementById('score-total').textContent = record.total;
@@ -1115,12 +1390,12 @@ Provide the JSON now.`;
             });
         }
 
-        function resetAndGoHome() {
+        window.resetAndGoHome = function() {
             renderDashboard();
-            switchScreen('screen-dashboard');
+            window.switchScreen('screen-dashboard');
             
             document.getElementById('setup-step-2').classList.add('hidden');
-            selectedDifficulty = null; 
+            window.selectedDifficulty = null; 
             
             const buttons = document.querySelectorAll('#setup-step-1 button');
             buttons.forEach(btn => {
@@ -1128,7 +1403,6 @@ Provide the JSON now.`;
                 btn.querySelector('div.font-bold').classList.replace('text-aured', 'text-gray-900');
             });
         }
-
     </script>
 </body>
 </html>
